@@ -41,7 +41,6 @@ import android.net.Uri;
 import android.provider.MediaStore;
 import android.widget.Toast;
 
-import com.example.andfilerw.AndFileRW;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.googlecode.tesseract.android.TessBaseAPI;
 import com.leinardi.android.speeddial.SpeedDialActionItem;
@@ -56,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     private EditText mEditOcrResult;//변환된 Text View
     private EditText mEditReading_state;//읽는 상태 View
     private EditText mEditOCRprogress;//OCR 진행 상태
-    private ImageButton mPlayButton, mStopButton, mBeforeButton, mNextButton, mFasterButton, mSlowerButton;
+    private ImageButton albumButton, mPlayButton, mStopButton, mBeforeButton, mNextButton, mFasterButton, mSlowerButton;
     SpeedDialView speedDialView;
     EditText editFileName;
 
@@ -101,25 +100,22 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         //저장소 권한 확인 및 요청
         Log.i("에헤라", "쓰기 권한 : " + PermissionUtil.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE));
         Log.i("에헤라", "읽기 권한 : " + PermissionUtil.checkPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE));
-        if (PermissionUtil.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                && (PermissionUtil.checkPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE))) {
-
-        } else {
+        if (!(PermissionUtil.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                && PermissionUtil.checkPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE))) {
             Log.i("에헤라", "권한 요청하러 들옴");
             PermissionUtil.requestExternalPermissions(this);
         }
-
         // 뷰 할당
-        mEditOcrResult = (EditText) findViewById(R.id.edit_ocrresult);
-        mEditReading_state = (EditText) findViewById(R.id.ReadingState_bar);
-        mEditOCRprogress = (EditText) findViewById(R.id.OCRprogress_bar);
+        mEditOcrResult = findViewById(R.id.edit_ocrresult);
+        mEditReading_state = findViewById(R.id.ReadingState_bar);
+        mEditOCRprogress = findViewById(R.id.OCRprogress_bar);
 
-        mPlayButton = (ImageButton) findViewById(R.id.play);
-        mStopButton = (ImageButton) findViewById(R.id.stop);
-        mBeforeButton = (ImageButton) findViewById(R.id.before);
-        mNextButton = (ImageButton) findViewById(R.id.next);
-        mFasterButton = (ImageButton) findViewById(R.id.faster);
-        mSlowerButton = (ImageButton) findViewById(R.id.slower);
+        mPlayButton = findViewById(R.id.play);
+        mStopButton = findViewById(R.id.stop);
+        mBeforeButton = findViewById(R.id.before);
+        mNextButton = findViewById(R.id.next);
+        mFasterButton = findViewById(R.id.faster);
+        mSlowerButton = findViewById(R.id.slower);
         editFileName = new EditText(MainActivity.this);
         editFileName.setHint("파일명을 입력하세요.");
 
@@ -179,8 +175,8 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
         //데이터 관리
         npath = "/sdcard/Download/";
-        frw = new AndFileRW(npath, OCRresult, true);
-        tmpFrw = new AndFileRW(npath, OCRresult, true);
+        frw = new AndFileRW(npath, OCRresult, "TempSavedFile.txt",true);
+        tmpFrw = new AndFileRW(npath, OCRresult, "TempSavedFile.txt",true);
         uriUtil = new URIUtil();
         mMyDatabaseOpenHelper = new MyDatabaseOpenHelper(mainActivityContext);
 
@@ -213,8 +209,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                         frw.setStr(OCRresult);
                         if (threadIndex>0){
                             //저장 안내
-                            frw.setFile_name(Title + ".txt");
-                            Log.i("frw", "파일이름 " + Title + "로 변경");
                             Toast.makeText(getApplicationContext(), "파일명을 입력하지 않으면 변환파일의 폴더명으로 저장합니다.", Toast.LENGTH_SHORT).show();
                             if (editFileName.getParent() != null)
                                 ((ViewGroup) editFileName.getParent()).removeView(editFileName);
@@ -243,9 +237,12 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                                     })
                                     .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int which) {
-                                            String tmpTitle = editFileName.getText().toString() + ".txt";
-                                            if (!tmpTitle.equals(".txt"))
-                                                frw.setFile_name(tmpTitle);
+                                            String inputTitle = editFileName.getText().toString() + ".txt";
+                                            if (!inputTitle.equals(".txt"))
+                                                frw.setFile_name(inputTitle);
+                                            else
+                                                frw.setFile_name(Title + ".txt");
+                                            Log.i("frw", "파일이름 " + frw.getFile_name() + "로 결정");
                                             if (frw.strToTxt()){
                                                 Log.i("fab", "tmpFrw.getFile_name() : " + tmpFrw.getFile_name());
                                                 tmpFrw.delTxt();
@@ -254,7 +251,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                                             } else {
                                                 Toast.makeText(getApplicationContext(), "File save Failed : " + frw.getPath() + frw.getFile_name(), Toast.LENGTH_SHORT).show();
                                             }
-                                            frw.setFile_name(Title);
                                         }
                                     })
                                     .show();
@@ -372,9 +368,9 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     mTts.speak(bigText.getSentence().get(ReadIndex), TextToSpeech.QUEUE_FLUSH, null, "unique_id");
                     mHandler.sendMessage(Message.obtain(mHandler, 6));//버튼 이미지 바꿈
                 }
-                else if (State == "playing"){
+                else if (State.equals("playing")){
                     Log.i("띠띠에스", "일시정지 버튼");
-                    if (mTts.isSpeaking() && State == "playing") {
+                    if (mTts.isSpeaking() && State.equals("playing")) {
                         State = "stop";
                         mTts.stop();
                     }
@@ -387,7 +383,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             @Override
             public void onClick(View v) {
                 Log.i("띠띠에스", "정지 버튼");
-                if (mTts.isSpeaking() && State == "playing") {
+                if (mTts.isSpeaking() && State.equals("playing")) {
                     State = "stop";
                     mTts.stop();
                 }
@@ -400,7 +396,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             @Override
             public void onClick(View v) {
                 Log.i("띠띠에스", "느리게 버튼");
-                if (mTts.isSpeaking() && State == "playing" && readSpeed > 0.4) {
+                if (mTts.isSpeaking() && State.equals("playing") && readSpeed > 0.4) {
                     readSpeed = readSpeed - 0.5;
                     mTts.setSpeechRate((float) readSpeed);
                     mTts.speak(bigText.getSentence().get(ReadIndex), TextToSpeech.QUEUE_FLUSH, null, "unique_id");
@@ -412,7 +408,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             @Override
             public void onClick(View v) {
                 Log.i("띠띠에스", "빨리 버튼");
-                if (mTts.isSpeaking() && State == "playing" && readSpeed < 5) {
+                if (mTts.isSpeaking() && State.equals("playing") && readSpeed < 5) {
                     readSpeed = readSpeed + 0.5;
                     mTts.setSpeechRate((float) readSpeed);
                     mTts.speak(bigText.getSentence().get(ReadIndex), TextToSpeech.QUEUE_FLUSH, null, "unique_id");
@@ -424,12 +420,12 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             @Override
             public void onClick(View v) {
                 Log.i("띠띠에스", "이전문장 버튼");
-                if (mTts.isSpeaking() && State == "playing") {
+                if (mTts.isSpeaking() && State.equals("playing")) {
                     if (ReadIndex > 0) {
                         //CharSum -= bigText.getSentence().get(ReadIndex - 1).length();
                         ReadIndex--;
                         CharSum -= bigText.getSentence().get(ReadIndex ).length();
-                        while (bigText.isSentenceNull(ReadIndex) == true){
+                        while (bigText.isSentenceNull(ReadIndex)){
                             Log.i("띠띠에스", ReadIndex + "번째null인지? : " + bigText.isSentenceNull(ReadIndex));
                             ReadIndex--;
                             CharSum -= bigText.getSentence().get(ReadIndex ).length();
@@ -444,7 +440,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             @Override
             public void onClick(View v) {
                 Log.i("띠띠에스", "다음문장 버튼");
-                if (mTts.isSpeaking() && State == "playing") {
+                if (mTts.isSpeaking() && State.equals("playing")) {
                     if (ReadIndex < bigText.getSize()-1) {
                         CharSum += bigText.getSentence().get(ReadIndex).length();
                         ReadIndex++;
@@ -456,16 +452,20 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         });
 
         //앨범 버튼 누르면 갤러리로 들어가서 여러개의 이미지 선택
-        ImageButton btnImage = (ImageButton) findViewById(R.id.btn_album);
-        btnImage.setOnClickListener(new View.OnClickListener() {
+        albumButton = findViewById(R.id.btn_album);
+        albumButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_PICK);
-                //사진을 여러개 선택할수 있도록 한다
-                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                intent.setType(android.provider.MediaStore.Images.Media.CONTENT_TYPE);
-                intent.setType("image/*");
-                startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICTURE_REQUEST_CODE);
+                if (OCRIndex < 0){
+
+                } else {
+                    Intent intent = new Intent(Intent.ACTION_PICK);
+                    //사진을 여러개 선택할수 있도록 한다
+                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                    intent.setType(android.provider.MediaStore.Images.Media.CONTENT_TYPE);
+                    intent.setType("image/*");
+                    startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICTURE_REQUEST_CODE);
+                }
             }
         });
     }
@@ -495,7 +495,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                         isPageUpdated = false;
                         Toast.makeText(getApplicationContext(), "이전 변환에 이어서 변환합니다.", Toast.LENGTH_SHORT).show();
                     }
-                    else if (Page >= pickedNumber)
+                    else
                         Toast.makeText(getApplicationContext(), "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_SHORT).show();
 
                 }
@@ -518,7 +518,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     }
 
     private class OCR extends Thread {
-        public int threadNum = 0;
+        private int threadNum;
         private ClipData clipData;
 
         public OCR(int threadNumA, ClipData data) { // 초기화 작업
@@ -541,9 +541,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                         Log.i("띠띠에스"," Uri.parse(cursor.getString(1)) : " + Uri.parse(cursor.getString(1)));
                         Log.i("띠띠에스"," cursor.getString(1) : " + cursor.getString(1));*/
                     image = MediaStore.Images.Media.getBitmap(getContentResolver(), urione);
-                } catch (FileNotFoundException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
                 } catch (IOException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -557,13 +554,17 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 stringBuilder.append(transResult);
                 bigText.addSentence(transResult);
                 mHandler.sendMessage(Message.obtain(mHandler, 5));//변환 과정
-                tmpFileSave(tmpFrw, "TempSavedFile", true, transResult);
+                tmpFrw.setStr(transResult);
+                tmpFrw.strToTxt();
+                Log.i("frw", "변환한거 먼저 저장 : " + Title + " Page : " + Page);
+                setBookTable();
                 OCRresult = stringBuilder.toString();
                 mHandler.sendMessage(Message.obtain(mHandler, 1));
-                if (State == "playing")
+                if (State.equals("playing"))
                     mHandler.sendMessage(Message.obtain(mHandler, 3));//읽는 중일 시 강조
             }
-            tmpFileSave(tmpFrw, "TempSavedFile", true, "\ntmpSaved : " + Title);
+            tmpFrw.setStr("\ntmpSaved : " + Title);
+            tmpFrw.strToTxt();
             Log.i("OCR", "스레드 끝남");
         }
     }
@@ -623,7 +624,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
                 case 6://버튼 이미지 변환
                     Log.i("띠띠에스",  "재생 or 일시정지 State : " + State + " isSpeaking : " + mTts.isSpeaking());
-                    if (State =="playing" && mTts.isSpeaking())
+                    if (State.equals("playing") && mTts.isSpeaking())
                         mPlayButton.setImageResource(R.drawable.pause_states);
                     else
                         mPlayButton.setImageResource(R.drawable.play_states);
@@ -631,7 +632,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
                 case 7://버튼 이미지 변환
                     Log.i("띠띠에스",  "재생 or 일시정지 State : " + State + " isSpeaking : " + mTts.isSpeaking());
-                    if (State =="playing" && mTts.isSpeaking())
+                    if (State.equals("playing") && mTts.isSpeaking())
                         mPlayButton.setImageResource(R.drawable.pause_states);
                     else
                         mPlayButton.setImageResource(R.drawable.play_states);
@@ -645,8 +646,8 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     void copyFiles() {
         AssetManager assetMgr = this.getAssets();
 
-        InputStream is = null;
-        OutputStream os = null;
+        InputStream is;
+        OutputStream os;
 
         try {
             is = assetMgr.open("tessdata/" + lang + ".traineddata");
@@ -663,9 +664,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             is.close();
             os.flush();
             os.close();
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -691,15 +689,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             else
                 Log.i("DB", "DB 갱신 실패 updateColumn <= 0 : " + Title + "  " + Page);
         }
-    }
-
-    public void tmpFileSave(AndFileRW A, String title, boolean apend, String saveStr){
-        A.setAppend_bool(true);
-        A.setFile_name("TempSavedFile.txt");
-        A.setStr(OCRresult);
-        A.strToTxt();
-        Log.i("frw", "변환한거 먼저 저장 : " + Title + " Page : " + Page);
-        setBookTable();
     }
 
     public boolean checkFile(File dir) {
