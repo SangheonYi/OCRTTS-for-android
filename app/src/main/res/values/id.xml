@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="fab_write_txt" type="id" />
+    <item name="fab_load_txt" type="id" />
+    <item name="fab_DB" type="id" />
+    <item name="fab_flush_edittxt" type="id" />
+</resources>

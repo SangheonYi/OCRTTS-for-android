@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">OcrTts</string>
+    <string name="label_fab_write_txt">저장하기</string>
+    <string name="label_fab_load_txt">불러오기</string>
+    <string name="label_fab_flush_edittxt">변환 결과 지우기</string>
+    <string name="label_fab_DB">변환 기록</string>
+</resources>
