@@ -1,4 +1,4 @@
-# MIS-for-android
+# Multiple images to speech for android
 ## Feature
 ### image translate into text
 * multiple images(jpg, gif, png) picked from gallery app translate into text or speech.
