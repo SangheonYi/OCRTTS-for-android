@@ -1,52 +1,45 @@
 package com.example.ocrtts;
 
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.res.ResourcesCompat;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.ContentResolver;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.AssetManager;
-
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import java.util.HashMap;
-
+import android.provider.MediaStore;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
-
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
-
-import android.content.ClipData;
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.net.Uri;
-import android.provider.MediaStore;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.res.ResourcesCompat;
+
+import com.example.uriutil.URIUtil;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.googlecode.tesseract.android.TessBaseAPI;
 import com.leinardi.android.speeddial.SpeedDialActionItem;
 import com.leinardi.android.speeddial.SpeedDialView;
-import com.example.uriutil.URIUtil;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener{
@@ -56,18 +49,18 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     private EditText mEditReading_state;//읽는 상태 View
     private EditText mEditOCRprogress;//OCR 진행 상태
     private ImageButton albumButton, mPlayButton, mStopButton, mBeforeButton, mNextButton, mFasterButton, mSlowerButton;
-    SpeedDialView speedDialView;
-    EditText editFileName;
+    private SpeedDialView speedDialView;
+    private EditText editFileName;
 
     //OCR 객체
     static TessBaseAPI sTess;
 
-    final int PICTURE_REQUEST_CODE = 100;
+    private final int PICTURE_REQUEST_CODE = 100;
     private String datapath = "";
     private String lang = "";
     private int OCRIndex = 0;//OCR 진행 중인 이미지 번호
-    int threadIndex = 0;//thread 시행횟수
-    int totalPageNum = 0;
+    private int threadIndex = 0;//thread 시행횟수
+    private int totalPageNum = 0;
 
     //Text 및 TTS 변수
     private TextToSpeech mTts;
@@ -76,21 +69,18 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     private int ReadIndex = 0;//읽고있는 문장 넘버
     private String State = "stop";//playing, stop
     private int CharSum = 0;//읽고 있는 글자의 view에서의 위치
-    String Reading_State = "현재 문장 " + bigText.getSize() + " 중 " + ReadIndex + "번 문장";
+    private String Reading_State = "현재 문장 " + bigText.getSize() + " 중 " + ReadIndex + "번 문장";
     private static final String TAG = "TextToSpeech";
     private double readSpeed = 3.0; //tts 기본속도 설정
 
     //데이터 관리
-    String npath;
-    AndFileRW frw;
-    AndFileRW tmpFrw;
+    private AndFileRW frw;
     private URIUtil uriUtil;
     private MyDatabaseOpenHelper mMyDatabaseOpenHelper;
-    String Title = "no title";
-    int Page = 0;
-    String title_last_page = Title + "\nPage: " + Page;
-    String[] pathArray;
-    boolean isPageUpdated = false;
+    private String Title = "no title";
+    private int Page = 0;
+    private String title_last_page = Title + "\nPage: " + Page;
+    private boolean isPageUpdated = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -131,8 +121,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                         .setTheme(R.style.AppTheme)
                         .create()
         );
-
-        speedDialView.addActionItem(
+/*        speedDialView.addActionItem(
                 new SpeedDialActionItem.Builder(R.id.fab_load_txt, R.drawable.file_import_outline)
                         .setLabel(getString(R.string.label_fab_load_txt))
                         .setLabelColor(Color.WHITE)
@@ -140,8 +129,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                         .setLabelClickable(false)
                         .setTheme(R.style.AppTheme)
                         .create()
-        );
-
+        );*/
         speedDialView.addActionItem(
                 new SpeedDialActionItem.Builder(R.id.fab_DB, R.drawable.delete_outline)
                         .setLabel(getString(R.string.label_fab_DB))
@@ -174,9 +162,9 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         datapath = getFilesDir() + "/tesseract";
 
         //데이터 관리
-        npath = "/sdcard/Download/";
+        String npath =  Environment.getExternalStorageDirectory().getPath() + "/sdcard/Download/";
+        Log.i("pathTest", "Environment.getExternalStorageDirectory().getPath(): " + npath);
         frw = new AndFileRW(npath, OCRresult, "TempSavedFile.txt",true);
-        tmpFrw = new AndFileRW(npath, OCRresult, "TempSavedFile.txt",true);
         uriUtil = new URIUtil();
         mMyDatabaseOpenHelper = new MyDatabaseOpenHelper(mainActivityContext);
 
@@ -209,25 +197,24 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                         frw.setStr(OCRresult);
                         if (threadIndex>0){
                             //저장 안내
-                            Toast.makeText(getApplicationContext(), "파일명을 입력하지 않으면 변환파일의 폴더명으로 저장합니다.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), "파일명을 입력하지 않으면 변환파일의 폴더명으로 저장합니다.", Toast.LENGTH_LONG).show();
                             if (editFileName.getParent() != null)
                                 ((ViewGroup) editFileName.getParent()).removeView(editFileName);
                             //대화상자 설정
                             MaterialAlertDialogBuilder writeMADB = new MaterialAlertDialogBuilder(mainActivityContext);
-                            final AlertDialog writeAD = writeMADB.setTitle("파일 저장")
+                            writeMADB.setTitle("파일 저장")
                                     .setView(editFileName)
                                     .setSingleChoiceItems(writeOption, checkedOption, new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int which) {
                                             switch (which){
                                                 case 0:
                                                     Log.i("frw", "저장 case 0" );
-                                                    frw.setAppend_bool(false);
-
+                                                    frw.setAppendBool(false);
                                                     break;
 
                                                 case  1:
                                                     Log.i("frw", "저장 case 1");
-                                                    frw.setAppend_bool(true);
+                                                    frw.setAppendBool(true);
                                                     break;
 
                                                 default:
@@ -239,17 +226,13 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                                         public void onClick(DialogInterface dialog, int which) {
                                             String inputTitle = editFileName.getText().toString() + ".txt";
                                             if (!inputTitle.equals(".txt"))
-                                                frw.setFile_name(inputTitle);
-                                            else
-                                                frw.setFile_name(Title + ".txt");
+                                                frw.setFileName(inputTitle);
                                             Log.i("frw", "파일이름 " + frw.getFile_name() + "로 결정");
                                             if (frw.strToTxt()){
-                                                Log.i("fab", "tmpFrw.getFile_name() : " + tmpFrw.getFile_name());
-                                                tmpFrw.delTxt();
-                                                Toast.makeText(getApplicationContext(), "File saved : " + frw.getPath() + frw.getFile_name(), Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(getApplicationContext(), "File saved : " + frw.getPath() + frw.getFile_name(), Toast.LENGTH_LONG).show();
                                                 setBookTable();
                                             } else {
-                                                Toast.makeText(getApplicationContext(), "File save Failed : " + frw.getPath() + frw.getFile_name(), Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(getApplicationContext(), "File save Failed : " + frw.getPath() + frw.getFile_name(), Toast.LENGTH_LONG).show();
                                             }
                                         }
                                     })
@@ -257,7 +240,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                             //onListItemClick확인해봐
                         }
                         else
-                            Toast.makeText(getApplicationContext(), "변환을 먼저 해주세요.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), "변환을 먼저 해주세요.", Toast.LENGTH_LONG).show();
 
                         return false; // true to keep the Speed Dial open
 
@@ -268,7 +251,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                         return false;
 
                     case R.id.fab_DB:
-                        int boolcheck = 0;
                         Log.i("fab", "클릭 fab_DB");
 
                         Cursor listDialogCursor = mMyDatabaseOpenHelper.sortColumn("title");
@@ -313,7 +295,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                         Log.i("fab", "클릭 fab_flush_edittxt");
                         OCRresult = " ";
                         mHandler.sendMessage(Message.obtain(mHandler, 1));//결과화면 set
-                        Toast.makeText(getApplicationContext(), "Text cleared", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), "Text cleared", Toast.LENGTH_LONG).show();
                         return false;
 
                     default:
@@ -456,15 +438,14 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         albumButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (OCRIndex < 0){
-
-                } else {
+                if (OCRIndex > 0){
                     Intent intent = new Intent(Intent.ACTION_PICK);
                     //사진을 여러개 선택할수 있도록 한다
                     intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
                     intent.setType(android.provider.MediaStore.Images.Media.CONTENT_TYPE);
                     intent.setType("image/*");
                     startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICTURE_REQUEST_CODE);
+
                 }
             }
         });
@@ -472,45 +453,42 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
     protected synchronized void onActivityResult(int requestCode, int resultCode, Intent data) {
         //갤러리 이미지 변환
+        super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICTURE_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 int pickedNumber = 0;
                 ClipData clipData = data.getClipData();
-                ContentResolver CR = this.getContentResolver();
 
                 Log.i("DB", "clipData : " + clipData);
                 if (clipData != null) {
-                    pathArray = uriUtil.getRealPathFromURI(this, clipData.getItemAt(0).getUri()).split("\\/");
+                    String[] pathArray = uriUtil.getRealPathFromURI(this, clipData.getItemAt(0).getUri()).split("\\/");
                     Log.i("DB", "선택한 이미지 경로 " + uriUtil.getRealPathFromURI(this, clipData.getItemAt(0).getUri()));
-                    Title = pathArray[pathArray.length-2];
+                    Title = pathArray[pathArray.length - 2];
+                    frw.setFileName(Title + ".txt");
                     Page = mMyDatabaseOpenHelper.getContinuePage(Title);
                     Log.i("DB", "선택한 폴더(책 제목) : " + Title);
                     pickedNumber = clipData.getItemCount();
 
-                    if (mMyDatabaseOpenHelper.isNewTitle(Title)){
+                    if (mMyDatabaseOpenHelper.isNewTitle(Title)) {
                         isPageUpdated = false;
-                        Toast.makeText(getApplicationContext(), "변환을 시작합니다.", Toast.LENGTH_SHORT).show();
-                    }
-                    else if (Page < pickedNumber){
+                        Toast.makeText(getApplicationContext(), "변환을 시작합니다.", Toast.LENGTH_LONG).show();
+                    } else if (Page < pickedNumber) {
                         isPageUpdated = false;
-                        Toast.makeText(getApplicationContext(), "이전 변환에 이어서 변환합니다.", Toast.LENGTH_SHORT).show();
-                    }
-                    else
-                        Toast.makeText(getApplicationContext(), "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show();
+                    } else
+                        Toast.makeText(getApplicationContext(), "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show();
 
-                }
-                else {
+                } else {
                     Log.i("DB", "clipData가 null");
                 }
 
-                if(pickedNumber>0){
+                if (pickedNumber > 0) {
                     OCR thread = new OCR(threadIndex, clipData);// OCR 진행할 스레드
                     threadIndex++;//생성한 스레드 수
                     totalPageNum = pickedNumber - Page;
                     thread.setDaemon(true);
                     thread.start();
-                }
-                else {
+                } else {
                     Log.i("DB", "pickedNumber가 0임");
                 }
             }
@@ -521,7 +499,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         private int threadNum;
         private ClipData clipData;
 
-        public OCR(int threadNumA, ClipData data) { // 초기화 작업
+        OCR(int threadNumA, ClipData data) { // 초기화 작업
             this.threadNum = threadNumA;
             this.clipData = data;
         }
@@ -554,8 +532,8 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 stringBuilder.append(transResult);
                 bigText.addSentence(transResult);
                 mHandler.sendMessage(Message.obtain(mHandler, 5));//변환 과정
-                tmpFrw.setStr(transResult);
-                tmpFrw.strToTxt();
+                frw.setStr(transResult);
+                frw.strToTxt();
                 Log.i("frw", "변환한거 먼저 저장 : " + Title + " Page : " + Page);
                 setBookTable();
                 OCRresult = stringBuilder.toString();
@@ -563,8 +541,8 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 if (State.equals("playing"))
                     mHandler.sendMessage(Message.obtain(mHandler, 3));//읽는 중일 시 강조
             }
-            tmpFrw.setStr("\ntmpSaved : " + Title);
-            tmpFrw.strToTxt();
+            frw.setStr("\ntmpSaved : " + Title);
+            frw.strToTxt();
             Log.i("OCR", "스레드 끝남");
         }
     }
@@ -629,13 +607,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     else
                         mPlayButton.setImageResource(R.drawable.play_states);
                     break;
-
-                case 7://버튼 이미지 변환
-                    Log.i("띠띠에스",  "재생 or 일시정지 State : " + State + " isSpeaking : " + mTts.isSpeaking());
-                    if (State.equals("playing") && mTts.isSpeaking())
-                        mPlayButton.setImageResource(R.drawable.pause_states);
-                    else
-                        mPlayButton.setImageResource(R.drawable.play_states);
 
                 default:
                     break;

@@ -14,16 +14,16 @@ public class AndFileRW {
     private String str;
     private boolean append_bool;
 
-    public AndFileRW(String in_path, String in_str, String in_file_name, boolean in_bool){
+    public AndFileRW(String in_path, String in_str, String in_file_name, boolean in_append_bool){
         this.path = in_path;
         this.file_name = in_file_name;
         this.str = in_str;
-        this.append_bool = in_bool;
+        this.append_bool = in_append_bool;
     }
-    public AndFileRW(String in_path, String in_str, boolean in_bool){
+    public AndFileRW(String in_path, String in_str, boolean in_append_bool){
         this.path = in_path;
         this.str = in_str;
-        this.append_bool = in_bool;
+        this.append_bool = in_append_bool;
     }
 
     public String getPath() {
@@ -46,7 +46,7 @@ public class AndFileRW {
         this.path = path;
     }
 
-    public void setFile_name(String file_name) {
+    public void setFileName(String file_name) {
         this.file_name = file_name;
     }
 
@@ -54,7 +54,7 @@ public class AndFileRW {
         this.str = str;
     }
 
-    public void setAppend_bool(boolean append_bool) {
+    public void setAppendBool(boolean append_bool) {
         this.append_bool = append_bool;
     }
 
