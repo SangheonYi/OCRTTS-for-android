@@ -43,7 +43,7 @@ import java.util.HashMap;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener{
-//commit test
+
     //View
     private EditText mEditOcrResult;//변환된 Text View
     private EditText mEditReading_state;//읽는 상태 View
