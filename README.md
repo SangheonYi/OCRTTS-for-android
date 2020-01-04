@@ -1,4 +1,7 @@
-# Multiple images to speech for android
+
+# OCRTTS-for-android
+actually, this app is built for 'listening' to scanned or pictured books.
+
 ## Feature
 ### image translate into text
 * multiple images(jpg, gif, png) picked from gallery app translate into text or speech.
