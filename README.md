@@ -1,3 +1,4 @@
+
 # OCRTTS-for-android
 actually, this app is built for 'listening' to scanned or pictured books.
 
