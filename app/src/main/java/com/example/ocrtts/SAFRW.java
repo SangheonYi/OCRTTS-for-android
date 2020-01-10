@@ -1,17 +1,14 @@
 package com.example.ocrtts;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Objects;
 
 public class SAFRW {
 
@@ -25,7 +22,7 @@ public class SAFRW {
         return intent;
     }
 
-    private Intent createFile(String mimeType, String fileName){
+    public Intent createFile(String mimeType, String fileName){
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType(mimeType);
@@ -33,16 +30,17 @@ public class SAFRW {
         return intent;
     }
 
-    private void alterDocument(String fileContent, ParcelFileDescriptor descriptor){
+    public void alterDocument(Activity activity, String fileContent, Uri uri){
         Log.i("SAFRW", "alterDocument str내용 : " + fileContent);
+        Log.i("SAFRW", "uri: " + uri);
         try {
-            ParcelFileDescriptor parcelFileDescriptor = descriptor;
-            FileWriter fileWriter = new FileWriter(parcelFileDescriptor.getFileDescriptor());
-            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-            bufferedWriter.append(fileContent);
+            ParcelFileDescriptor parcelFileDescriptor = activity.getContentResolver().
+                    openFileDescriptor(uri, "wa");
+            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(parcelFileDescriptor.getFileDescriptor()));
+            bufferedWriter.write(fileContent);
             bufferedWriter.flush();
             bufferedWriter.close();
-            fileWriter.close();
+            parcelFileDescriptor.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
