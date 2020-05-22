@@ -574,33 +574,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         }
     };
 
-    void copyFiles() {
-        AssetManager assetMgr = this.getAssets();
-
-        InputStream is;
-        OutputStream os;
-
-        try {
-            is = assetMgr.open("tessdata/" + lang + ".traineddata");
-
-            String destFile = datapath + "/tessdata/" + lang + ".traineddata";
-
-            os = new FileOutputStream(destFile);
-
-            byte[] buffer = new byte[1024];
-            int read;
-            while ((read = is.read(buffer)) != -1) {
-                os.write(buffer, 0, read);
-            }
-            is.close();
-            os.flush();
-            os.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void setBookTable() {
         if (!isPageUpdated) {
             isPageUpdated = true;
@@ -666,4 +639,32 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         sTess.end();
         super.onDestroy();
     }
+
+    void copyFiles() {
+        AssetManager assetMgr = this.getAssets();
+
+        InputStream is;
+        OutputStream os;
+
+        try {
+            is = assetMgr.open("tessdata/" + lang + ".traineddata");
+
+            String destFile = datapath + "/tessdata/" + lang + ".traineddata";
+
+            os = new FileOutputStream(destFile);
+
+            byte[] buffer = new byte[1024];
+            int read;
+            while ((read = is.read(buffer)) != -1) {
+                os.write(buffer, 0, read);
+            }
+            is.close();
+            os.flush();
+            os.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
 }
