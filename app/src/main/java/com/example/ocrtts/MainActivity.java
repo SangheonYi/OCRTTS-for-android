@@ -457,7 +457,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     totalPageNum = pickedNumber - Page;
                     thread.setDaemon(true);
                     thread.start();
-//                    startService(new Intent(this, TransService.class));
                 } else {
                     Log.i("DB", "pickedNumber가 0임");
                 }
@@ -522,7 +521,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             }
             Log.i("OCR", "스레드 끝남");
             mHandler.sendMessage(Message.obtain(mHandler, 5));//변환 과정
-//            stopService(new Intent(this, TransService.class));
         }
     }
 
