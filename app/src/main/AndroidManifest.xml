@@ -23,6 +23,7 @@
             android:name=".TransService"
             android:enabled="true"
             android:exported="true">
+            //dkj
         </service>
     </application>
 
