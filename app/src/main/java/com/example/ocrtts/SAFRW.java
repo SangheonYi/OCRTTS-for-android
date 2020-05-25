@@ -11,19 +11,31 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class SAFRW {
+    private Intent intent;
+    private String fName;
 
     public SAFRW(){
+        fName = null;
+    }
 
+    public Intent getIntent(){
+        return intent;
+    }
+    public String getfName(){
+        return fName;
+    }
+    public void setfName(String fileName){
+        fName = fileName;
     }
     public Intent performFileSearch(String mimeType){
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType(mimeType);
         return intent;
     }
 
     public Intent createFile(String mimeType, String fileName){
-        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType(mimeType);
         intent.putExtra(Intent.EXTRA_TITLE, fileName);

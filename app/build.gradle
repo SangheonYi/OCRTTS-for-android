@@ -51,6 +51,7 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation files('libs/tesseract4android-2.0.0.aar')
+    implementation files('libs/URIUtil-1.0-release.aar')
 
     implementation "com.leinardi.android:speed-dial:3.0.0"
     implementation 'com.google.android.material:material:1.2.0-alpha03'

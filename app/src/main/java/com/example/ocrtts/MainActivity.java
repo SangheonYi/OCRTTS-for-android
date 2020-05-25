@@ -2,7 +2,6 @@ package com.example.ocrtts;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -23,6 +22,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -32,6 +32,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.googlecode.tesseract.android.TessBaseAPI;
 import com.leinardi.android.speeddial.SpeedDialActionItem;
 import com.leinardi.android.speeddial.SpeedDialView;
+import com.example.uriutil.URIUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -168,9 +169,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 // 터치 이벤트 제거
                 return true;
             }
-
-            ;
-
         });
 
         speedDialView.setOnActionSelectedListener(new SpeedDialView.OnActionSelectedListener() {
@@ -183,6 +181,11 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                         final int[] checkedOption = {1};
                         Log.i("fab", "클릭 fab_write_txt");
                             //대화상자 설정
+                            TextView fileState = new TextView(mainActivityContext);
+                            if (frw.getfName()== null)
+                                fileState.setHint("저장할 파일이 없습니다.");
+                            else
+                                fileState.setText(frw.getfName());
                             MaterialAlertDialogBuilder writeMADB = new MaterialAlertDialogBuilder(mainActivityContext);
                             writeMADB.setTitle("파일 저장")
                                     .setSingleChoiceItems(writeOption, checkedOption[0], new DialogInterface.OnClickListener() {
@@ -191,7 +194,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                                                 case 0:
                                                     checkedOption[0] = 0;
                                                     break;
-
                                                 case 1:
                                                     checkedOption[0] = 1;
                                                     break;
@@ -207,7 +209,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                                                     intent = frw.createFile(MIME_TEXT, Title);
                                                     startActivityForResult(intent, CREATE_REQUEST_CODE);
                                                     break;
-
                                                 case 1:
                                                     Log.i("frw", "저장 case 1 이어쓰기");
                                                     intent = frw.performFileSearch(MIME_TEXT);
@@ -216,6 +217,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                                             }
                                         }
                                     })
+                                    .setView(fileState)
                                     .show();
                             //onListItemClick확인해봐
                         return false; // true to keep the Speed Dial open
@@ -428,7 +430,10 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 int pickedNumber = 0;
                 Log.i("DB", "clipData : " + clipData);
                 if (clipData != null) {
-                    String pathStr = clipData.getItemAt(0).getUri().getPath();
+                    Uri uri = clipData.getItemAt(0).getUri();
+                    URIUtil uriUtil = new URIUtil();
+                    Log.i("DB", "uri: " + uri);
+                    String pathStr = uriUtil.getRealPathFromURI(this, uri);
                     String[] pathArray = pathStr.split("\\/");
                     Log.i("DB", "선택한 이미지 경로 " + pathStr);
                     Title = pathArray[pathArray.length - 2];
@@ -444,7 +449,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                         Toast.makeText(getApplicationContext(), "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show();
                     } else
                         Toast.makeText(getApplicationContext(), "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show();
-
                 } else
                     Log.i("DB", "clipData가 null");
                 if (pickedNumber > 0) {
@@ -453,13 +457,19 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     totalPageNum = pickedNumber - Page;
                     thread.setDaemon(true);
                     thread.start();
+//                    startService(new Intent(this, TransService.class));
                 } else {
                     Log.i("DB", "pickedNumber가 0임");
                 }
             } else if (requestCode == CREATE_REQUEST_CODE || requestCode == EDIT_REQUEST_CODE) {
                 if (data != null) {
                     SAFUri = data.getData();
-                    Log.i("onActivityResult", "SAFUri: " + SAFUri);
+                    Log.i("DB", "SAFUri: " + SAFUri);
+                    Log.i("DB", "SAFUri.getPath: " + SAFUri.getPath());
+                    String pathStr = SAFUri.getPath();
+                    String[] pathArray = pathStr.split("\\/");
+                    Log.i("DB", "선택한 이미지 경로 " + pathStr);
+                    frw.setfName(pathArray[pathArray.length - 1]);
                 } else
                     Log.i("onActivityResult", "data가 null");
             }
@@ -511,6 +521,8 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     mHandler.sendMessage(Message.obtain(mHandler, 3));//읽는 중일 시 강조
             }
             Log.i("OCR", "스레드 끝남");
+            mHandler.sendMessage(Message.obtain(mHandler, 5));//변환 과정
+//            stopService(new Intent(this, TransService.class));
         }
     }
 
