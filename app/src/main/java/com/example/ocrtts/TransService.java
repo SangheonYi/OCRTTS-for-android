@@ -1,6 +1,7 @@
 package com.example.ocrtts;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
@@ -9,13 +10,16 @@ import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.JobIntentService;
 
 import java.util.Locale;
 
-public class TransService extends Service {
+public class TransService extends JobIntentService {
     private static final String TAG = "TransService";
     private Thread transThread;
+    static final int JOB_ID = 1001;
 
     public TransService(Thread ocrThread) {
         transThread = ocrThread;
@@ -23,27 +27,24 @@ public class TransService extends Service {
 
     @Override
     public void onCreate() {
+        Log.d(TAG, "onCreate");
         super.onCreate();
     }
 
-    public int onStartCommand(Intent intent, int flags, int startId){
-        Toast.makeText(this, "Service Started", Toast.LENGTH_LONG).show();
-        Log.d(TAG, "onStartCommand()");
-        transThread.start();
-        return super.onStartCommand(intent, flags, startId);
+    static void enqueueWork(Context context, Intent work) {
+        enqueueWork(context, TransService.class, JOB_ID, work);
     }
 
-    /**
-     * StopService가 실행될 때 호출된다.
-     */
+    @Override
+    protected void onHandleWork(@NonNull Intent intent) {
+        Toast.makeText(this, "Service Started", Toast.LENGTH_LONG).show();
+        Log.d(TAG, "onStartCommand()");
+
+
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
-    }
-
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
     }
 }

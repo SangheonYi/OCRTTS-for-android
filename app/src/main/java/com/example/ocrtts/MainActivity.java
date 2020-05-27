@@ -3,6 +3,7 @@ package com.example.ocrtts;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -91,8 +92,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         albumButton.setOnClickListener(this);
 
         speedDialView = findViewById(R.id.speedDial);
-        if (speedDialView != null)
-        {
+        if (speedDialView != null) {
             speedDialView.addActionItem(
                     new SpeedDialActionItem.Builder(R.id.fab_write_txt, R.drawable.content_save_outline)
                             .setLabel(getString(R.string.label_fab_create_txt))
@@ -379,22 +379,13 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             if (requestCode == PICTURE_REQUEST_CODE) {
                 ClipData clipData = data.getClipData();
                 int pickedNumber = 0;
+                Uri dataUri = data.getData();
+                if (dataUri != null && clipData == null)
+                    clipData = ClipData.newUri(getContentResolver(), "URI", dataUri);
                 Log.i("DB", "clipData : " + clipData);
                 if (clipData != null) {
                     Uri uri = clipData.getItemAt(0).getUri();
                     Log.i("DB", "uri: " + uri);
-                    /*
-                    URIUtil uriUtil = new URIUtil();
-                    for (int i = 0; i < cursor.getColumnCount() && cursor != null; i++) {
-                        Log.i("DB", "cursor.getColumnName(" + i + "): " + cursor.getColumnName(i));
-                        Log.i("DB", "getString(getColumnIndex(getColumnName" + i + "): " + cursor.getString(cursor.getColumnIndex(cursor.getColumnName(i))));
-                    }
-
-                    String pathStr = uriUtil.getRealPathFromURI(this, uri);
-                    String[] pathArray = pathStr.split("\\/");
-                    Log.i("DB", "선택한 이미지 경로 " + pathStr);
-                    model.Title = pathArray[pathArray.length - 2];
-                     */
                     Cursor cursor = getContentResolver().query(uri, null, null, null, null);
                     try {
                         if (cursor != null && cursor.moveToFirst())
@@ -447,14 +438,11 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                             cursor.close();
                         }
                     }
-//                    String pathStr = model.SAFUri.getPath();
                     String[] pathArray = pathStr.split("\\/");
                     Log.i("DB", "선택한 이미지 경로 " + pathStr);
                     model.frw.setfName(pathArray[pathArray.length - 1]);
                 } else
                     Log.i("onActivityResult", "data가 null");
-//                content://media/external/file/152577
-//                content://com.android.providers.downloads.documents/document/3438
             }
         }
         //갤러리 이미지 변환
@@ -662,16 +650,19 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         super.onStart();
         Log.i("LifeCycle", "onStart() 호출");
     }
+
     @Override
     public void onResume() {
         super.onResume();
         Log.i("LifeCycle", "onResume() 호출");
     }
+
     @Override
     public void onPause() {
         super.onPause();
         Log.i("LifeCycle", "onPause() 호출");
     }
+
     @Override
     public void onStop() {
         super.onStop();
