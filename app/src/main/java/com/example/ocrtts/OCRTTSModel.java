@@ -1,14 +1,18 @@
 package com.example.ocrtts;
 
+import android.content.ClipData;
 import android.net.Uri;
 
-class OCRTTSModel {
+import java.io.Serializable;
+
+class OCRTTSModel implements Serializable {
     //OCR
-    String datapath;
-    String lang;
+    String datapath;//can
+    String lang;//can
     int OCRIndex;//OCR 진행 중인 이미지 번호
     int threadIndex;//thread 시행횟수
     int totalPageNum;
+    ClipData clipData;
 
     //Text, TTS
     String OCRresult;//OCR 결과값 받음
@@ -27,6 +31,9 @@ class OCRTTSModel {
     int Page;
     String title_last_page ;
     boolean isPageUpdated;
+
+    //Service
+    boolean mIsBound;
 
     OCRTTSModel(){
         //OCR
