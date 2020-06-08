@@ -425,7 +425,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 Log.i("버튼", "이전문장 버튼");
                 if (mTts.isSpeaking() && model.State.equals("playing")) {
                     if (model.ReadIndex > 0) {
-                        //CharSum -= bigText.getSentence().get(ReadIndex - 1).length();
                         model.ReadIndex--;
                         model.CharSum -= model.bigText.getSentence().get(model.ReadIndex).length();
                         while (model.bigText.isSentenceNull(model.ReadIndex)) {
@@ -517,8 +516,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     OCR thread = new OCR(model.threadIndex, model.clipData);// OCR 진행할 스레드
                     thread.setDaemon(true);
                     thread.start();
-//                    startService(new Intent(this, TransService.class));
-
                 } else {
                     Log.i("DB", "pickedNumber가 0임");
                 }
@@ -529,8 +526,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     Log.i("DB", "SAFUri.getPath: " + model.SAFUri.getPath());
                     String pathStr = "";
                     Log.i("DB", "uri: " + model.SAFUri);
-                    /*                    for (int i = 0; i < cursor.getColumnCount(); i++)
-                        Log.i("DB", "cursor.getColumnName(" + i + "): " + cursor.getColumnName(i));*/
                     try (Cursor cursor = getContentResolver().query(model.SAFUri, null, null, null, null)) {
                         if (cursor.moveToFirst()) {
                             Log.i("DB", "OpenableColumns.DISPLAY_NAME: " + OpenableColumns.DISPLAY_NAME);
@@ -566,10 +561,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 Intent intent = new Intent(getApplicationContext(), TransService.class);
                 intent.putExtra("pageNum", model.totalPageNum);
                 model.mIsBound = bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-                /*if (Build.VERSION.SDK_INT >= 26)
-                    startForegroundService(intent);
-                else
-                    startService(intent);*/
             }
             Log.i("OCR", this.threadNum + "번째 스레드의 run");
 
@@ -588,21 +579,16 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 transResult = sTess.getUTF8Text();
                 stringBuilder.append(transResult);
                 model.bigText.addSentence(transResult);
-                if (model.OCRIndex < model.totalPageNum) {
+                if (model.OCRIndex < model.totalPageNum)
                     mHandler.sendMessage(Message.obtain(mHandler, VIEW_MAIN_PROGRESS, 0));//변환 과정
-//                    mHandler.sendMessage(Message.obtain(serviceHandler, TransService.VIEW_NOTIFI_PROGRESS, 0));//변환 과정
-                } else {
+                else
                     mHandler.sendMessage(Message.obtain(mHandler, VIEW_TRANS_DONE, 0));//변환 과정
-//                    mHandler.sendMessage(Message.obtain(serviceHandler, TransService.VIEW_NOTIFI_DONE, 0));//변환 과정
-                }
                 model.OCRresult = stringBuilder.toString();
                 mHandler.sendMessage(Message.obtain(mHandler, VIEW_RESULT_SET, 0));//결과 화면 set
                 if (model.State.equals("playing"))
                     mHandler.sendMessage(Message.obtain(mHandler, VIEW_READ_HIGHLIGHT, 0));//읽는 중일 시 강조
             }
             Log.i("OCR", "스레드 끝남");
-            /*Intent intent = new Intent(getApplicationContext(), TransService.class);
-            stopService(intent);*/
             termiateService();
         }
     }
@@ -680,9 +666,8 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         }
     }
 
-    private void termiateService(){
-        if (model.mIsBound)
-        {
+    private void termiateService() {
+        if (model.mIsBound) {
             Message msg = Message.obtain(null, TransService.DISCONNECT, 0);
             try {
                 mServiceMessenger.send(msg);
@@ -693,10 +678,8 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             model.mIsBound = false;
         }
     }
-    
+
     public void onDestroy() {
-        /*Intent intent = new Intent(getApplicationContext(), TransService.class);
-        stopService(intent);*/
         termiateService();
         if (mTts != null) {
             mTts.stop();
