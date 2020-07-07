@@ -4,11 +4,13 @@ actually, this app is built for 'listening' to scanned or pictured books.
 
 ## Feature
 ### image translate into text
-* multiple images(jpg, gif, png) picked from gallery app translate into text or speech.
+* multiple images(jpg, gif, png) picked from android system UI app translate into text or speech.
 * when you want to save file, first create txt file or select txt file by picker.
 * translation result text will be saved when app end.
 * when translating is too long, you can stop the application and next time you can continue the translation from next page you stopped.
 * you can check stopped page.
+* when translate start begin, notification sepcies translate status.
+* while translate you can turn off screen. this will save battery a lot and prevent device's superheat
 
 ### text translate into speech
 * app can read to you translated or input text.
