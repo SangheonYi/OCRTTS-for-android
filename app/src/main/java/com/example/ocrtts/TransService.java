@@ -1,5 +1,3 @@
-
-
 package com.example.ocrtts;
 
 import android.annotation.SuppressLint;
@@ -113,6 +111,5 @@ public class TransService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.i("TransService cycle", "onDestroy()");
-
     }
 }

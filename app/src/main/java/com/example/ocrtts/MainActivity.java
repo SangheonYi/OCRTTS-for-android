@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
                 case VIEW_MAIN_PROGRESS://변환 과정
                     try {
-                        msg = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.OCRIndex);
+                        msg = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.OCRIndex, 0);
                         msg.replyTo = mActivityMessenger;
                         mServiceMessenger.send(msg);
                     } catch (RemoteException e) {
@@ -466,13 +466,13 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             case R.id.btn_album:
                 Log.i("버튼", "앨범 버튼");
                 if (model.OCRIndex < 0) {
-                    Intent intent = new Intent(Intent.ACTION_PICK);
+//                    Intent intent = new Intent(Intent.ACTION_PICK);
+                    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                     //사진을 여러개 선택할수 있도록 한다
                     intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                    intent.setType(android.provider.MediaStore.Images.Media.CONTENT_TYPE);
                     intent.setType("image/*");
                     Log.i("onCreate", "album startActivityForResult");
-                    startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICTURE_REQUEST_CODE);
+                    startActivityForResult(intent, PICTURE_REQUEST_CODE);
                 }
                 break;
         }
@@ -484,18 +484,31 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         if (resultCode == RESULT_OK) {
             Log.i("onActivityResult", "requestCode: " + requestCode);
             if (requestCode == PICTURE_REQUEST_CODE) {
-                model.clipData = data.getClipData();
                 int pickedNumber = 0;
                 Uri dataUri = data.getData();
-                if (dataUri != null && model.clipData == null)
+
+                model.clipData = data.getClipData();
+                if (dataUri != null && model.clipData == null) {
                     model.clipData = ClipData.newUri(getContentResolver(), "URI", dataUri);
-                Log.i("DB", "clipData : " + model.clipData);
+                    Log.i("DB", "clipData : " + model.clipData);
+                }
                 if (model.clipData != null) {
-                    Uri uri = model.clipData.getItemAt(0).getUri();
-                    Log.i("DB", "uri: " + uri);
-                    try (Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
-                        if (cursor != null && cursor.moveToFirst())
-                            model.Title = cursor.getString(cursor.getColumnIndex("bucket_display_name"));
+                    String[] proj = {MediaStore.Images.Media.RELATIVE_PATH};
+                    try (Cursor cursor = getContentResolver()
+                            .query(android.provider.MediaStore.Images.Media
+                                    .EXTERNAL_CONTENT_URI, proj, null, null, null)) {
+                        if (cursor != null && cursor.moveToFirst()) {
+                            /*
+                            String[] colNames;
+                            colNames = cursor.getColumnNames();
+                            Log.i("DB", "getColumnCount: " + cursor.getColumnCount());
+                            for (int i = 0; i < colNames.length; i++)
+                            {
+                                Log.i("DB", "colNames" + i +" : " + colNames[i] + " : " + cursor.getString(i));
+                            }
+                            */
+                            model.Title = cursor.getString(0).split("/")[1];
+                        }
                     }
                     model.Page = mMyDatabaseOpenHelper.getContinuePage(model.Title);
                     Log.i("DB", "선택한 폴더(책 제목) : " + model.Title);
@@ -516,9 +529,8 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     OCR thread = new OCR(model.threadIndex, model.clipData);// OCR 진행할 스레드
                     thread.setDaemon(true);
                     thread.start();
-                } else {
+                } else
                     Log.i("DB", "pickedNumber가 0임");
-                }
             } else if (requestCode == CREATE_REQUEST_CODE || requestCode == EDIT_REQUEST_CODE) {
                 if (data != null) {
                     model.SAFUri = data.getData();
@@ -527,6 +539,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     String pathStr = "";
                     Log.i("DB", "uri: " + model.SAFUri);
                     try (Cursor cursor = getContentResolver().query(model.SAFUri, null, null, null, null)) {
+                        assert cursor != null;
                         if (cursor.moveToFirst()) {
                             Log.i("DB", "OpenableColumns.DISPLAY_NAME: " + OpenableColumns.DISPLAY_NAME);
                             pathStr = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
