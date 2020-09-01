@@ -20,7 +20,7 @@ class TransService : Service() {
 
     //View
     var builder: NotificationCompat.Builder? = null
-    var notificationManagerCompat: NotificationManagerCompat? = null
+    var notifiManagerCompat: NotificationManagerCompat? = null
 
     override fun onCreate() {
         Log.d("TransService cycle", "onCreate()")
@@ -29,7 +29,7 @@ class TransService : Service() {
     }
 
     fun startForegroundService() {
-        notificationManagerCompat = NotificationManagerCompat.from(this)
+        notifiManagerCompat = NotificationManagerCompat.from(this)
         builder = if (Build.VERSION.SDK_INT >= 26) {
             val CHANNEL_ID = "ocr_service_channel"
             val channel = NotificationChannel(CHANNEL_ID,
@@ -63,11 +63,11 @@ class TransService : Service() {
                 VIEW_NOTIFI_PROGRESS -> {
                     builder!!.setProgress(totalPageNum, msg.arg1, false)
                             .setContentText(msg.arg1.toString() + " / " + totalPageNum)
-                    notificationManagerCompat!!.notify(notificationId, builder!!.build())
+                    notifiManagerCompat!!.notify(notificationId, builder!!.build())
                     Log.i("serviceHandler", "VIEW_NOTIFI_PROGRESS: " + totalPageNum + "장 중 " + msg.arg1 + "장 변환")
                 }
                 VIEW_NOTIFI_DONE -> {
-                    notificationManagerCompat!!.cancel(notificationId)
+                    notifiManagerCompat!!.cancel(notificationId)
                     Log.i("serviceHandler", "VIEW_TRANS_DONE: " + msg.arg1 + "끝?")
                 }
                 else -> {

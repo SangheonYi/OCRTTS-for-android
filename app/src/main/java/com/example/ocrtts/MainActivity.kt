@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
     private lateinit var mTts: TextToSpeech
 
     //Data
-    var mMyDatabaseOpenHelper: MyDatabaseOpenHelper? = null
+    var myDBOpenHelper: MyDatabaseOpenHelper? = null
 
     //Communicate
     var mHandler = MainHandler()
@@ -57,57 +57,57 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         override fun handleMessage(msg: Message) {
             val msgToService: Message
             when (msg.what) {
-                OCRTTSInter.VIEW_RESULT_SET -> mEditOcrResult!!.setText(model!!.OCRresult)
+                OCRTTSInter.VIEW_RESULT_SET -> mEditOcrResult.setText(model.ocrResult)
                 OCRTTSInter.VIEW_READING_STATE -> {
-                    model!!.Reading_State = model!!.bigText.size.toString() + "문장 중 " + (model!!.ReadIndex + 1) + "번째"
-                    mEditReading_state!!.setText(model!!.Reading_State)
+                    model.readState = model.bigText.size.toString() + "문장 중 " + (model.readIndex + 1) + "번째"
+                    mEditReading_state.setText(model.readState)
                 }
                 OCRTTSInter.VIEW_READ_HIGHLIGHT -> {
-                    Log.i("띠띠에스", model!!.ReadIndex.toString() + "th 문장 3 강조 들옴 charsum : " + model!!.CharSum)
-                    mEditOcrResult!!.requestFocus()
-                    if (model!!.ReadIndex < model!!.bigText.size && model!!.CharSum + model!!.bigText.sentence[model!!.ReadIndex].length <= mEditOcrResult!!.length()) {
-                        Log.i("띠띠에스", model!!.ReadIndex.toString() + "th 문장 길이 : " + model!!.bigText.sentence[model!!.ReadIndex].length + " charsum : " + model!!.CharSum)
-                        mEditOcrResult!!.setSelection(model!!.CharSum, model!!.CharSum + model!!.bigText.sentence[model!!.ReadIndex].length)
-                        Log.i("띠띠에스", model!!.ReadIndex.toString() + "th 문장 시작 : " + model!!.CharSum + " 끝 : " + (model!!.CharSum + model!!.bigText.sentence[model!!.ReadIndex].length))
+                    Log.i("띠띠에스", model.readIndex.toString() + "th 문장 3 강조 들옴 charsum : " + model.charSum)
+                    mEditOcrResult.requestFocus()
+                    if (model.readIndex < model.bigText.size && model.charSum + model.bigText.sentence[model.readIndex].length <= mEditOcrResult.length()) {
+                        Log.i("띠띠에스", model.readIndex.toString() + "th 문장 길이 : " + model.bigText.sentence[model.readIndex].length + " charsum : " + model.charSum)
+                        mEditOcrResult.setSelection(model.charSum, model.charSum + model.bigText.sentence[model.readIndex].length)
+                        Log.i("띠띠에스", model.readIndex.toString() + "th 문장 시작 : " + model.charSum + " 끝 : " + (model.charSum + model.bigText.sentence[model.readIndex].length))
                     }
                 }
                 OCRTTSInter.VIEW_RESET -> {
-                    model!!.ReadIndex = 0
-                    model!!.CharSum = 0
-                    mEditOcrResult!!.clearFocus()
-                    model!!.State = "Stop"
-                    mTts!!.stop()
-                    mHandler!!.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READING_STATE, 0))
-                    mHandler!!.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
+                    model.readIndex = 0
+                    model.charSum = 0
+                    mEditOcrResult.clearFocus()
+                    model.state = "Stop"
+                    mTts.stop()
+                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READING_STATE, 0))
+                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
                     Log.i("띠띠에스", "리셋")
                 }
                 OCRTTSInter.VIEW_MAIN_PROGRESS -> {
                     try {
-                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model!!.OCRIndex, 0)
+                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.ocrIndex, 0)
                         msgToService.replyTo = mActivityMessenger
                         mServiceMessenger!!.send(msgToService)
                     } catch (e: RemoteException) {
                         e.printStackTrace()
                     }
-                    mEditOCRprogress!!.setText(model!!.totalPageNum.toString() + "장 중 " + model!!.OCRIndex + "장 변환")
-                    Log.i("띠띠에스", model!!.totalPageNum.toString() + "장 중 " + model!!.OCRIndex + "장 변환")
+                    mEditOCRprogress.setText(model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
+                    Log.i("띠띠에스", model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                 }
                 OCRTTSInter.VIEW_TRANS_DONE -> {
                     try {
-                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_DONE, model!!.OCRIndex)
+                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_DONE, model.ocrIndex)
                         msgToService.replyTo = mActivityMessenger
                         mServiceMessenger!!.send(msgToService)
                     } catch (e: RemoteException) {
                         e.printStackTrace()
                     }
-                    mEditOCRprogress!!.setText(model!!.totalPageNum.toString() + "장 Done")
-                    mEditOcrResult!!.append(" ")
-                    Log.i("띠띠에스", model!!.OCRIndex.toString() + "끝?")
-                    model!!.OCRIndex = -1
+                    mEditOCRprogress.setText(model.totalPageNum.toString() + "장 Done")
+                    mEditOcrResult.append(" ")
+                    Log.i("띠띠에스", model.ocrIndex.toString() + "끝?")
+                    model.ocrIndex = -1
                 }
                 OCRTTSInter.VIEW_BUTTON_IMG -> {
-                    Log.i("띠띠에스", "재생 or 일시정지 State : " + model!!.State + " isSpeaking : " + mTts!!.isSpeaking)
-                    if (model!!.State == "playing" && mTts!!.isSpeaking) mPlayButton!!.setImageResource(R.drawable.pause_states) else mPlayButton!!.setImageResource(R.drawable.play_states)
+                    Log.i("띠띠에스", "재생 or 일시정지 State : " + model.state + " isSpeaking : " + mTts.isSpeaking)
+                    if (model.state == "playing" && mTts.isSpeaking) mPlayButton.setImageResource(R.drawable.pause_states) else mPlayButton.setImageResource(R.drawable.play_states)
                 }
                 else -> {
                 }
@@ -161,7 +161,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         mNextButton.setOnClickListener(this)
         albumButton.setOnClickListener(this)
         speedDialView = findViewById(R.id.speedDial)
-        speedDialView!!.addActionItem(
+        speedDialView.addActionItem(
                 SpeedDialActionItem.Builder(R.id.fab_write_txt, R.drawable.content_save_outline)
                         .setLabel(getString(R.string.label_fab_create_txt))
                         .setLabelColor(Color.WHITE)
@@ -170,7 +170,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                         .setTheme(R.style.AppTheme)
                         .create()
         )
-        speedDialView!!.addActionItem(
+        speedDialView.addActionItem(
                 SpeedDialActionItem.Builder(R.id.fab_DB, R.drawable.delete_outline)
                         .setLabel(getString(R.string.label_fab_DB))
                         .setLabelColor(Color.WHITE)
@@ -179,7 +179,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                         .setTheme(R.style.AppTheme)
                         .create()
         )
-        speedDialView!!.addActionItem(
+        speedDialView.addActionItem(
                 SpeedDialActionItem.Builder(R.id.fab_flush_edittxt, R.drawable.refresh)
                         .setLabel(getString(R.string.label_fab_flush_edittxt))
                         .setLabelColor(Color.WHITE)
@@ -194,15 +194,15 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         mTts.setSpeechRate(model.readSpeed.toFloat())
         sTess = TessBaseAPI()
         // Tesseract 인식 언어를 한국어로 설정 및 초기화
-        model!!.datapath = "$filesDir/tesseract"
-        if (checkFile(File(model!!.datapath + "/tessdata"))) {
-            sTess!!.init(model!!.datapath, model!!.lang)
+        model.dataPath = "$filesDir/tesseract"
+        if (checkFile(File(model.dataPath + "/tessdata"))) {
+            sTess!!.init(model.dataPath, model.lang)
         }
 
         //데이터 관리
-        mMyDatabaseOpenHelper = MyDatabaseOpenHelper(mainActivityContext)
-        mMyDatabaseOpenHelper!!.open()
-        mMyDatabaseOpenHelper!!.create()
+        myDBOpenHelper = MyDatabaseOpenHelper(mainActivityContext)
+        myDBOpenHelper!!.open()
+        myDBOpenHelper!!.create()
         mHandler = MainHandler()
         mActivityMessenger = Messenger(mHandler)
         mEditOcrResult.setOnTouchListener({ view, event -> // 터치 이벤트 제거
@@ -216,7 +216,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                     Log.i("fab", "클릭 fab_write_txt")
                     //대화상자 설정
                     val fileState = TextView(mainActivityContext)
-                    if (model!!.frw.getfName() == null) fileState.hint = "저장할 파일이 없습니다." else fileState.text = model!!.frw.getfName()
+                    if (model.frw.getfName() == null) fileState.hint = "저장할 파일이 없습니다." else fileState.text = model.frw.getfName()
                     val writeMADB = MaterialAlertDialogBuilder(mainActivityContext)
                     writeMADB.setTitle("파일 저장")
                             .setSingleChoiceItems(writeOption, checkedOption[0]) { dialog, which ->
@@ -230,12 +230,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                                 when (checkedOption[0]) {
                                     0 -> {
                                         Log.i("frw", "저장 case 0 파일생성")
-                                        intent = model!!.frw.createFile(model!!.MIME_TEXT, model!!.Title)
+                                        intent = model.frw.createFile(model.MIME_TEXT, model.title)
                                         startActivityForResult(intent, OCRTTSInter.CREATE_REQUEST_CODE)
                                     }
                                     1 -> {
                                         Log.i("frw", "저장 case 1 이어쓰기")
-                                        intent = model!!.frw.performFileSearch(model!!.MIME_TEXT)
+                                        intent = model.frw.performFileSearch(model.MIME_TEXT)
                                         startActivityForResult(intent, OCRTTSInter.EDIT_REQUEST_CODE)
                                     }
                                 }
@@ -247,7 +247,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 }
                 R.id.fab_DB -> {
                     Log.i("fab", "클릭 fab_DB")
-                    val listDialogCursor = mMyDatabaseOpenHelper!!.sortColumn("title")
+                    val listDialogCursor = myDBOpenHelper!!.sortColumn("title")
                     listDialogCursor.moveToFirst()
                     MaterialAlertDialogBuilder(mainActivityContext)
                             .setTitle("변환 기록")
@@ -255,18 +255,18 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                                 var which = which
                                 which++
                                 Log.i("fab", "$isChekced <-isChekced  which- > $which")
-                                val cursor = mMyDatabaseOpenHelper!!.sortColumn("title")
+                                val cursor = myDBOpenHelper!!.sortColumn("title")
                                 cursor.move(which)
                                 if (isChekced) {
-                                    if (mMyDatabaseOpenHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 1)) Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공") else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
+                                    if (myDBOpenHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 1)) Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공") else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
                                 } else {
-                                    if (mMyDatabaseOpenHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 0)) Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공") else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
+                                    if (myDBOpenHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 0)) Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공") else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
                                 }
                             }
                             .setPositiveButton("Ok") { dialog, which ->
-                                val cursor = mMyDatabaseOpenHelper!!.sortColumn("title")
+                                val cursor = myDBOpenHelper!!.sortColumn("title")
                                 while (cursor.moveToNext()) {
-                                    if (cursor.getInt(4) == 1) mMyDatabaseOpenHelper!!.deleteTuple(cursor.getInt(0).toLong(), 0)
+                                    if (cursor.getInt(4) == 1) myDBOpenHelper!!.deleteTuple(cursor.getInt(0).toLong(), 0)
                                 }
                             }
                             .show()
@@ -274,7 +274,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 }
                 R.id.fab_flush_edittxt -> {
                     Log.i("fab", "클릭 fab_flush_edittxt")
-                    model!!.OCRresult = " "
+                    model.ocrResult = " "
                     (mHandler as MainHandler).sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESULT_SET, 0)) //결과화면 set
                     Toast.makeText(applicationContext, "Text cleared", Toast.LENGTH_LONG).show()
                     false
@@ -283,26 +283,26 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
             }
         })
         Log.i("onCreate()", "Thread.currentThread().getName()" + Thread.currentThread().name)
-        mTts!!.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+        mTts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             //음성 발성 listener
             override fun onStart(utteranceId: String) {
-                Log.i("띠띠에스", model!!.ReadIndex.toString() + "번째null인지? : " + model!!.bigText.isSentenceNull(model!!.ReadIndex))
-                if (model!!.ReadIndex < model!!.bigText.size) {
+                Log.i("띠띠에스", model.readIndex.toString() + "번째null인지? : " + model.bigText.isSentenceNull(model.readIndex))
+                if (model.readIndex < model.bigText.size) {
                     (mHandler as MainHandler).sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READING_STATE, 0))
                     mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READ_HIGHLIGHT, 0))
                 } else {
                     Log.i("띠띠에스", "완독start")
                     mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESET, 0))
                 }
-                Log.i("띠띠에스", "ReadIndex: " + model!!.ReadIndex + " 빅텍 Sentence:  @@" + model!!.bigText.sentence[model!!.ReadIndex] + "@@")
+                Log.i("띠띠에스", "ReadIndex: " + model.readIndex + " 빅텍 Sentence:  @@" + model.bigText.sentence[model.readIndex] + "@@")
             }
 
             override fun onDone(utteranceId: String) {
-                model!!.CharSum += model!!.bigText.sentence[model!!.ReadIndex].length
+                model.charSum += model.bigText.sentence[model.readIndex].length
                 Log.i("띠띠에스", "이야 다 시부렸어라")
                 (mHandler as MainHandler).sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READING_STATE, 0))
-                model!!.ReadIndex++
-                if (model!!.ReadIndex < model!!.bigText.size) mTts!!.speak(model!!.bigText.sentence[model!!.ReadIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id") else {
+                model.readIndex++
+                if (model.readIndex < model.bigText.size) mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id") else {
                     Log.i("띠띠에스", "완독done")
                     (mHandler as MainHandler).sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESET, 0))
                 }
@@ -318,72 +318,72 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         when (src.id) {
             R.id.play -> {
                 Log.i("버튼", "재생 버튼")
-                if (!mTts!!.isSpeaking && model!!.bigText.size > 0 && !(model!!.bigText.size == 1 && model!!.bigText.isSentenceNull(0))) {
-                    model!!.State = "playing"
-                    mTts!!.speak(model!!.bigText.sentence[model!!.ReadIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
-                    mHandler!!.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
-                } else if (model!!.State == "playing") {
+                if (!mTts.isSpeaking && model.bigText.size > 0 && !(model.bigText.size == 1 && model.bigText.isSentenceNull(0))) {
+                    model.state = "playing"
+                    mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
+                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
+                } else if (model.state == "playing") {
                     Log.i("버튼", "일시정지 버튼")
-                    if (mTts!!.isSpeaking && model!!.State == "playing") {
-                        model!!.State = "stop"
-                        mTts!!.stop()
+                    if (mTts.isSpeaking && model.state == "playing") {
+                        model.state = "stop"
+                        mTts.stop()
                     }
-                    mHandler!!.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
+                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
                 }
             }
             R.id.stop -> {
                 Log.i("버튼", "정지 버튼")
-                if (mTts!!.isSpeaking && model!!.State == "playing") {
-                    model!!.State = "stop"
-                    mTts!!.stop()
+                if (mTts.isSpeaking && model!!.state == "playing") {
+                    model.state = "stop"
+                    mTts.stop()
                 }
-                mHandler!!.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESET, 0)) //리셋
+                mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESET, 0)) //리셋
             }
             R.id.before -> {
                 Log.i("버튼", "이전문장 버튼")
-                if (mTts!!.isSpeaking && model!!.State == "playing") {
-                    if (model!!.ReadIndex > 0) {
-                        model!!.ReadIndex--
-                        model!!.CharSum -= model!!.bigText.sentence[model!!.ReadIndex].length
-                        while (model!!.bigText.isSentenceNull(model!!.ReadIndex)) {
-                            Log.i("버튼", model!!.ReadIndex.toString() + "번째null인지? : " + model!!.bigText.isSentenceNull(model!!.ReadIndex))
-                            model!!.ReadIndex--
-                            model!!.CharSum -= model!!.bigText.sentence[model!!.ReadIndex].length
+                if (mTts.isSpeaking && model.state == "playing") {
+                    if (model.readIndex > 0) {
+                        model.readIndex--
+                        model.charSum -= model.bigText.sentence[model.readIndex].length
+                        while (model.bigText.isSentenceNull(model.readIndex)) {
+                            Log.i("버튼", model.readIndex.toString() + "번째null인지? : " + model.bigText.isSentenceNull(model.readIndex))
+                            model.readIndex--
+                            model.charSum -= model.bigText.sentence[model.readIndex].length
                         } //while 없으면 높히 곡도를~에서도 갇힘 있으면 편히 잠들어라 에서만 갇힘
                     }
-                    mTts!!.speak(model!!.bigText.sentence[model!!.ReadIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
+                    mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
                 }
             }
             R.id.next -> {
                 Log.i("버튼", "다음문장 버튼")
-                if (mTts!!.isSpeaking && model!!.State == "playing") {
-                    if (model!!.ReadIndex < model!!.bigText.size - 1) {
-                        model!!.CharSum += model!!.bigText.sentence[model!!.ReadIndex].length
-                        model!!.ReadIndex++
+                if (mTts.isSpeaking && model.state == "playing") {
+                    if (model.readIndex < model.bigText.size - 1) {
+                        model.charSum += model.bigText.sentence[model.readIndex].length
+                        model.readIndex++
                     }
-                    Log.i("버튼", "ReadIndex: " + model!!.ReadIndex + " 빅텍 사이즈:  " + model!!.bigText.size)
-                    mTts!!.speak(model!!.bigText.sentence[model!!.ReadIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
+                    Log.i("버튼", "ReadIndex: " + model.readIndex + " 빅텍 사이즈:  " + model.bigText.size)
+                    mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
                 }
             }
             R.id.faster -> {
                 Log.i("버튼", "빨리 버튼")
-                if (mTts!!.isSpeaking && model!!.State == "playing" && model!!.readSpeed < 5) {
-                    model!!.readSpeed = model!!.readSpeed + 0.5
-                    mTts!!.setSpeechRate(model!!.readSpeed.toFloat())
-                    mTts!!.speak(model!!.bigText.sentence[model!!.ReadIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
+                if (mTts.isSpeaking && model.state == "playing" && model.readSpeed < 5) {
+                    model.readSpeed = model.readSpeed + 0.5
+                    mTts.setSpeechRate(model.readSpeed.toFloat())
+                    mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
                 }
             }
             R.id.slower -> {
                 Log.i("버튼", "느리게 버튼")
-                if (mTts!!.isSpeaking && model!!.State == "playing" && model!!.readSpeed > 0.4) {
-                    model!!.readSpeed = model!!.readSpeed - 0.5
-                    mTts!!.setSpeechRate(model!!.readSpeed.toFloat())
-                    mTts!!.speak(model!!.bigText.sentence[model!!.ReadIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
+                if (mTts.isSpeaking && model.state == "playing" && model.readSpeed > 0.4) {
+                    model.readSpeed = model.readSpeed - 0.5
+                    mTts.setSpeechRate(model.readSpeed.toFloat())
+                    mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
                 }
             }
             R.id.btn_album -> {
                 Log.i("버튼", "앨범 버튼")
-                if (model!!.OCRIndex < 0) {
+                if (model.ocrIndex < 0) {
 //                    Intent intent = new Intent(Intent.ACTION_PICK);
                     val intent = Intent(Intent.ACTION_GET_CONTENT)
                     //사진을 여러개 선택할수 있도록 한다
@@ -405,12 +405,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
             if (requestCode == OCRTTSInter.PICTURE_REQUEST_CODE) {
                 var pickedNumber = 0
                 val dataUri = data!!.data
-                model!!.clipData = data.clipData
-                if (dataUri != null && model!!.clipData == null) {
-                    model!!.clipData = ClipData.newUri(contentResolver, "URI", dataUri)
-                    Log.i("DB", "clipData : " + model!!.clipData)
+                model.clipData = data.clipData
+                if (dataUri != null && model.clipData == null) {
+                    model.clipData = ClipData.newUri(contentResolver, "URI", dataUri)
+                    Log.i("DB", "clipData : " + model.clipData)
                 }
-                if (model!!.clipData != null) {
+                if (model.clipData != null) {
                     val proj = arrayOf(MediaStore.Images.Media.RELATIVE_PATH)
                     contentResolver
                             .query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, proj, null, null, null).use { cursor ->
@@ -424,35 +424,35 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                                 Log.i("DB", "colNames" + i +" : " + colNames[i] + " : " + cursor.getString(i));
                             }
                             */
-                                    model!!.Title = cursor.getString(0).split("/".toRegex()).toTypedArray()[1]
+                                    model.title = cursor.getString(0).split("/".toRegex()).toTypedArray()[1]
                                 }
                             }
-                    model!!.Page = mMyDatabaseOpenHelper!!.getContinuePage(model!!.Title)
-                    Log.i("DB", "선택한 폴더(책 제목) : " + model!!.Title)
-                    pickedNumber = model!!.clipData!!.itemCount
-                    if (mMyDatabaseOpenHelper!!.isNewTitle(model!!.Title)) {
-                        model!!.isPageUpdated = false
+                    model.page = myDBOpenHelper!!.getContinuePage(model.title)
+                    Log.i("DB", "선택한 폴더(책 제목) : " + model.title)
+                    pickedNumber = model.clipData!!.itemCount
+                    if (myDBOpenHelper!!.isNewTitle(model.title)) {
+                        model.isPageUpdated = false
                         Toast.makeText(applicationContext, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
-                    } else if (model!!.Page < pickedNumber) {
-                        model!!.isPageUpdated = false
+                    } else if (model.page < pickedNumber) {
+                        model.isPageUpdated = false
                         Toast.makeText(applicationContext, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
                     } else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
                 } else Log.i("DB", "clipData가 null")
                 if (pickedNumber > 0) {
-                    model!!.threadIndex++ //생성한 스레드 수
-                    model!!.totalPageNum = pickedNumber - model!!.Page
-                    val thread = OCR(model!!.threadIndex, model!!.clipData) // OCR 진행할 스레드
+                    model.threadIndex++ //생성한 스레드 수
+                    model.totalPageNum = pickedNumber - model.page
+                    val thread = OCR(model.threadIndex, model.clipData) // OCR 진행할 스레드
                     thread.isDaemon = true
                     thread.start()
                 } else Log.i("DB", "pickedNumber가 0임")
             } else if (requestCode == OCRTTSInter.CREATE_REQUEST_CODE || requestCode == OCRTTSInter.EDIT_REQUEST_CODE) {
                 if (data != null) {
-                    model!!.SAFUri = data.data
-                    Log.i("DB", "SAFUri: " + model!!.SAFUri)
-                    Log.i("DB", "SAFUri.getPath: " + model!!.SAFUri!!.path)
+                    model.safUri = data.data
+                    Log.i("DB", "SAFUri: " + model.safUri)
+                    Log.i("DB", "SAFUri.getPath: " + model.safUri!!.path)
                     var pathStr = ""
-                    Log.i("DB", "uri: " + model!!.SAFUri)
-                    contentResolver.query(model!!.SAFUri!!, null, null, null, null).use { cursor ->
+                    Log.i("DB", "uri: " + model.safUri)
+                    contentResolver.query(model.safUri!!, null, null, null, null).use { cursor ->
                         assert(cursor != null)
                         if (cursor!!.moveToFirst()) {
                             Log.i("DB", "OpenableColumns.DISPLAY_NAME: " + OpenableColumns.DISPLAY_NAME)
@@ -462,7 +462,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                     }
                     val pathArray = pathStr.split("/".toRegex()).toTypedArray()
                     Log.i("DB", "선택한 파일 경로 $pathStr")
-                    model!!.frw.setfName(pathArray[pathArray.size - 1])
+                    model.frw.setfName(pathArray[pathArray.size - 1])
                 } else Log.i("onActivityResult", "data가 null")
             }
         }
@@ -475,35 +475,35 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         override fun run() {
             var image: Bitmap? = null //갤러리에서 이미지 받아와
             var transResult: String?
-            val stringBuilder = StringBuilder()
-            stringBuilder.append(model!!.OCRresult)
+            val strBuilder = StringBuilder()
+            strBuilder.append(model.ocrResult)
             var urione: Uri?
-            if (model!!.Page < model!!.clipData!!.itemCount) {
-                model!!.OCRIndex = 0
+            if (model.page < model.clipData!!.itemCount) {
+                model.ocrIndex = 0
                 val intent = Intent(applicationContext, TransService::class.java)
-                intent.putExtra("pageNum", model!!.totalPageNum)
-                model!!.mIsBound = bindService(intent, mConnection, BIND_AUTO_CREATE)
+                intent.putExtra("pageNum", model.totalPageNum)
+                model.mIsBound = bindService(intent, mConnection, BIND_AUTO_CREATE)
             }
             Log.i("OCR", threadNum.toString() + "번째 스레드의 run")
-            while (model!!.Page < model!!.clipData!!.itemCount) {
+            while (model.page < model.clipData!!.itemCount) {
                 try {
-                    urione = model!!.clipData!!.getItemAt(model!!.Page).uri
+                    urione = model.clipData!!.getItemAt(model.page).uri
                     image = MediaStore.Images.Media.getBitmap(contentResolver, urione)
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }
                 sTess!!.setImage(image)
-                model!!.OCRIndex++
-                model!!.Page++
+                model.ocrIndex++
+                model.page++
                 Log.i("OCR", "getUTF8Text가 OCR변환 끝나고 값 받을 때 까지 기다림. 그냥 변환 중이란 얘기")
                 transResult = sTess!!.utF8Text
-                stringBuilder.append(transResult)
-                model!!.bigText.addSentence(transResult)
-                if (model!!.OCRIndex < model!!.totalPageNum) mHandler!!.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_MAIN_PROGRESS, 0)) //변환 과정
-                else mHandler!!.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_TRANS_DONE, 0)) //변환 과정
-                model!!.OCRresult = stringBuilder.toString()
-                mHandler!!.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESULT_SET, 0)) //결과 화면 set
-                if (model!!.State == "playing") mHandler!!.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READ_HIGHLIGHT, 0)) //읽는 중일 시 강조
+                strBuilder.append(transResult)
+                model.bigText.addSentence(transResult)
+                if (model.ocrIndex < model.totalPageNum) mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_MAIN_PROGRESS, 0)) //변환 과정
+                else mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_TRANS_DONE, 0)) //변환 과정
+                model.ocrResult = strBuilder.toString()
+                mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESULT_SET, 0)) //결과 화면 set
+                if (model.state == "playing") mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READ_HIGHLIGHT, 0)) //읽는 중일 시 강조
             }
             Log.i("OCR", "스레드 끝남")
             termiateService()
@@ -511,46 +511,38 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
     }
 
     fun setBookTable() {
-        if (!model!!.isPageUpdated) {
-            model!!.isPageUpdated = true
-        }
-        model!!.title_last_page = """
-               ${model!!.Title}
-               Page: ${model!!.Page}
+        if (!model.isPageUpdated) model.isPageUpdated = true
+        model.titleLastPage = """
+               ${model.title}
+               Page: ${model.page}
                """.trimIndent()
-        mMyDatabaseOpenHelper!!.open()
-        if (model!!.threadIndex > 0 && mMyDatabaseOpenHelper!!.isNewTitle(model!!.Title)) {
-            if (mMyDatabaseOpenHelper!!.insertColumn(model!!.Title, model!!.Page.toLong(), model!!.title_last_page, 0) != -1L) Log.i("DB", "DB에 삽입됨 : " + model!!.Title + "  " + model!!.Page) else Log.i("DB", "DB에 삽입 에러 -1 : " + model!!.Title + "  " + model!!.Page)
-        } else if (model!!.threadIndex > 0 && !mMyDatabaseOpenHelper!!.isNewTitle(model!!.Title)) {
-            if (mMyDatabaseOpenHelper!!.updateColumn(mMyDatabaseOpenHelper!!.getIdByTitle(model!!.Title), model!!.Title, model!!.Page.toLong(), model!!.title_last_page, 0)) Log.i("DB", "DB 갱신 됨 : " + model!!.Title + "  " + model!!.Page) else Log.i("DB", "DB 갱신 실패 updateColumn <= 0 : " + model!!.Title + "  " + model!!.Page)
+        myDBOpenHelper!!.open()
+        if (model.threadIndex > 0 && myDBOpenHelper!!.isNewTitle(model.title)) {
+            if (myDBOpenHelper!!.insertColumn(model.title, model.page.toLong(), model.titleLastPage, 0) != -1L)
+                Log.i("DB", "DB에 삽입됨 : " + model.title + "  " + model.page) else Log.i("DB", "DB에 삽입 에러 -1 : " + model.title + "  " + model.page)
+        } else if (model.threadIndex > 0 && !myDBOpenHelper!!.isNewTitle(model.title)) {
+            if (myDBOpenHelper!!.updateColumn(myDBOpenHelper!!.getIdByTitle(model.title), model.title, model.page.toLong(), model.titleLastPage, 0))
+                Log.i("DB", "DB 갱신 됨 : " + model.title + "  " + model.page) else Log.i("DB", "DB 갱신 실패 updateColumn <= 0 : " + model.title + "  " + model.page)
         }
     }
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = mTts!!.setLanguage(Locale.KOREAN)
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            val result = mTts.setLanguage(Locale.KOREAN)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED)
                 Log.e(OCRTTSInter.TAG, "TextToSpeech 초기화 에러!")
-            } else {
-                mPlayButton!!.isEnabled = true
-            }
-        } else {
-            Log.e(OCRTTSInter.TAG, "TextToSpeech 초기화 에러!")
-        }
+            else mPlayButton.isEnabled = true
+        } else Log.e(OCRTTSInter.TAG, "TextToSpeech 초기화 에러!")
     }
 
     fun checkFile(dir: File): Boolean {
         //디렉토리가 없으면 디렉토리를 만들고 그후에 파일을 카피
-        if (!dir.exists() && dir.mkdirs()) {
-            copyFiles()
-        }
+        if (!dir.exists() && dir.mkdirs()) copyFiles()
         //디렉토리가 있지만 파일이 없으면 파일카피 진행
         if (dir.exists()) {
-            val datafilepath = model!!.datapath + "/tessdata/" + model!!.lang + ".traineddata"
-            val datafile = File(datafilepath)
-            if (!datafile.exists()) {
-                copyFiles()
-            }
+            val dataFilePath = model.dataPath + "/tessdata/" + model.lang + ".traineddata"
+            val dataFile = File(dataFilePath)
+            if (!dataFile.exists()) copyFiles()
         }
         return true
     }
@@ -560,8 +552,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         val `is`: InputStream
         val os: OutputStream
         try {
-            `is` = assetMgr.open("tessdata/" + model!!.lang + ".traineddata")
-            val destFile = model!!.datapath + "/tessdata/" + model!!.lang + ".traineddata"
+            `is` = assetMgr.open("tessdata/" + model.lang + ".traineddata")
+            val destFile = model.dataPath + "/tessdata/" + model.lang + ".traineddata"
             os = FileOutputStream(destFile)
             val buffer = ByteArray(1024)
             var read: Int
@@ -577,7 +569,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
     }
 
     private fun termiateService() {
-        if (model!!.mIsBound) {
+        if (model.mIsBound) {
             val msg = Message.obtain(null, TransService.DISCONNECT, 0)
             try {
                 mServiceMessenger!!.send(msg)
@@ -585,19 +577,17 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 e.printStackTrace()
             }
             unbindService(mConnection)
-            model!!.mIsBound = false
+            model.mIsBound = false
         }
     }
 
     public override fun onDestroy() {
         termiateService()
-        if (mTts != null) {
-            mTts!!.stop()
-            mTts!!.shutdown()
-        }
+        mTts.stop()
+        mTts.shutdown()
         Log.i("onDestroy", "onDestroy()")
-        if (model!!.threadIndex > 0 && model!!.SAFUri != null) {
-            model!!.frw.alterDocument(this, model!!.OCRresult, model!!.SAFUri)
+        if (model.threadIndex > 0 && model.safUri != null) {
+            model.frw.alterDocument(this, model.ocrResult, model.safUri)
             setBookTable()
         } else Log.i("onPause()", "thread is negative")
         sTess!!.clear()
