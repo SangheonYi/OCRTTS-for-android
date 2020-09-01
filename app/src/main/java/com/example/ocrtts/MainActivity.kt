@@ -30,10 +30,11 @@ import java.util.*
 
 class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnClickListener {
     var model: OCRTTSModel = OCRTTSModel()
+
     //View
-    private lateinit var mEditOcrResult : EditText //변환된 Text View
+    private lateinit var mEditOcrResult: EditText //변환된 Text View
     private lateinit var mEditReading_state: EditText //읽는 상태 View
-    private lateinit var mEditOCRprogress: EditText //OCR 진행 상태
+    private lateinit var mEditOCRProgress: EditText //OCR 진행 상태
     private lateinit var albumButton: ImageButton
     private lateinit var mPlayButton: ImageButton
     private lateinit var mStopButton: ImageButton
@@ -53,7 +54,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
     var mActivityMessenger: Messenger? = null
 
     @SuppressLint("HandlerLeak")
-     inner class MainHandler : Handler() {
+    inner class MainHandler : Handler() {
         override fun handleMessage(msg: Message) {
             val msgToService: Message
             when (msg.what) {
@@ -89,7 +90,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                     } catch (e: RemoteException) {
                         e.printStackTrace()
                     }
-                    mEditOCRprogress.setText(model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
+                    mEditOCRProgress.setText(model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                     Log.i("띠띠에스", model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                 }
                 OCRTTSInter.VIEW_TRANS_DONE -> {
@@ -100,7 +101,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                     } catch (e: RemoteException) {
                         e.printStackTrace()
                     }
-                    mEditOCRprogress.setText(model.totalPageNum.toString() + "장 Done")
+                    mEditOCRProgress.setText(model.totalPageNum.toString() + "장 Done")
                     mEditOcrResult.append(" ")
                     Log.i("띠띠에스", model.ocrIndex.toString() + "끝?")
                     model.ocrIndex = -1
@@ -145,7 +146,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         // 뷰 할당
         mEditOcrResult = findViewById(R.id.edit_ocrresult)
         mEditReading_state = findViewById(R.id.ReadingState_bar)
-        mEditOCRprogress = findViewById(R.id.OCRprogress_bar)
+        mEditOCRProgress = findViewById(R.id.OCRprogress_bar)
         mPlayButton = findViewById(R.id.play)
         mStopButton = findViewById(R.id.stop)
         mBeforeButton = findViewById(R.id.before)
@@ -251,23 +252,26 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                     listDialogCursor.moveToFirst()
                     MaterialAlertDialogBuilder(mainActivityContext)
                             .setTitle("변환 기록")
-                            .setMultiChoiceItems(listDialogCursor, "check_bool", "title_last_page") { dialog, which, isChekced ->
-                                var which = which
+                            .setMultiChoiceItems(listDialogCursor, "check_bool", "title_last_page") { dialog, picked, isChekced ->
+                                var which = picked
                                 which++
                                 Log.i("fab", "$isChekced <-isChekced  which- > $which")
                                 val cursor = myDBOpenHelper!!.sortColumn("title")
                                 cursor.move(which)
                                 if (isChekced) {
-                                    if (myDBOpenHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 1)) Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공") else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
+                                    if (myDBOpenHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 1))
+                                        Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공")
+                                    else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
                                 } else {
-                                    if (myDBOpenHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 0)) Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공") else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
+                                    if (myDBOpenHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 0))
+                                        Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공")
+                                    else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
                                 }
                             }
                             .setPositiveButton("Ok") { dialog, which ->
                                 val cursor = myDBOpenHelper!!.sortColumn("title")
-                                while (cursor.moveToNext()) {
+                                while (cursor.moveToNext())
                                     if (cursor.getInt(4) == 1) myDBOpenHelper!!.deleteTuple(cursor.getInt(0).toLong(), 0)
-                                }
                             }
                             .show()
                     false
@@ -333,7 +337,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
             }
             R.id.stop -> {
                 Log.i("버튼", "정지 버튼")
-                if (mTts.isSpeaking && model!!.state == "playing") {
+                if (mTts.isSpeaking && model.state == "playing") {
                     model.state = "stop"
                     mTts.stop()
                 }
