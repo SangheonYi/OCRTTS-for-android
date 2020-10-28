@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
 
     //View
     private lateinit var mEditOcrResult: EditText //변환된 Text View
-    private lateinit var mEditReading_state: EditText //읽는 상태 View
+    private lateinit var mEditReadingState: EditText //읽는 상태 View
     private lateinit var mEditOCRProgress: EditText //OCR 진행 상태
     private lateinit var albumButton: ImageButton
     private lateinit var mPlayButton: ImageButton
@@ -46,7 +46,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
     private lateinit var mTts: TextToSpeech
 
     //Data
-    var myDBOpenHelper: MyDatabaseOpenHelper? = null
+    private var myDBOpenHelper: MyDatabaseOpenHelper? = null
 
     //Communicate
     var mHandler = MainHandler()
@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 OCRTTSInter.VIEW_RESULT_SET -> mEditOcrResult.setText(model.ocrResult)
                 OCRTTSInter.VIEW_READING_STATE -> {
                     model.readState = model.bigText.size.toString() + "문장 중 " + (model.readIndex + 1) + "번째"
-                    mEditReading_state.setText(model.readState)
+                    mEditReadingState.setText(model.readState)
                 }
                 OCRTTSInter.VIEW_READ_HIGHLIGHT -> {
                     Log.i("띠띠에스", model.readIndex.toString() + "th 문장 3 강조 들옴 charsum : " + model.charSum)
@@ -145,7 +145,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         }
         // 뷰 할당
         mEditOcrResult = findViewById(R.id.edit_ocrresult)
-        mEditReading_state = findViewById(R.id.ReadingState_bar)
+        mEditReadingState = findViewById(R.id.ReadingState_bar)
         mEditOCRProgress = findViewById(R.id.OCRprogress_bar)
         mPlayButton = findViewById(R.id.play)
         mStopButton = findViewById(R.id.stop)
@@ -445,7 +445,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 if (pickedNumber > 0) {
                     model.threadIndex++ //생성한 스레드 수
                     model.totalPageNum = pickedNumber - model.page
-                    val thread = OCR(model.threadIndex, model.clipData) // OCR 진행할 스레드
+                    val thread = OCR() // OCR 진행할 스레드
                     thread.isDaemon = true
                     thread.start()
                 } else Log.i("DB", "pickedNumber가 0임")
@@ -474,21 +474,22 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
     }
 
     private inner class OCR  // 초기화 작업
-    (private val threadNum: Int, data: ClipData?) : Thread() {
+        : Thread() {
         @Synchronized
         override fun run() {
             var image: Bitmap? = null //갤러리에서 이미지 받아와
             var transResult: String?
             val strBuilder = StringBuilder()
-            strBuilder.append(model.ocrResult)
             var urione: Uri?
+
+            strBuilder.append(model.ocrResult)
             if (model.page < model.clipData!!.itemCount) {
                 model.ocrIndex = 0
                 val intent = Intent(applicationContext, TransService::class.java)
                 intent.putExtra("pageNum", model.totalPageNum)
                 model.mIsBound = bindService(intent, mConnection, BIND_AUTO_CREATE)
             }
-            Log.i("OCR", threadNum.toString() + "번째 스레드의 run")
+            Log.i("OCR",  model.threadIndex.toString() + "번째 스레드의 run")
             while (model.page < model.clipData!!.itemCount) {
                 try {
                     urione = model.clipData!!.getItemAt(model.page).uri
@@ -503,18 +504,20 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 transResult = sTess!!.utF8Text
                 strBuilder.append(transResult)
                 model.bigText.addSentence(transResult)
-                if (model.ocrIndex < model.totalPageNum) mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_MAIN_PROGRESS, 0)) //변환 과정
-                else mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_TRANS_DONE, 0)) //변환 과정
+                if (model.ocrIndex < model.totalPageNum)
+                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_MAIN_PROGRESS, 0)) //변환 과정
+                else
+                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_TRANS_DONE, 0)) //변환 끝
                 model.ocrResult = strBuilder.toString()
                 mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESULT_SET, 0)) //결과 화면 set
                 if (model.state == "playing") mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READ_HIGHLIGHT, 0)) //읽는 중일 시 강조
             }
             Log.i("OCR", "스레드 끝남")
-            termiateService()
+            terminateService()
         }
     }
 
-    fun setBookTable() {
+    private fun setBookTable() {
         if (!model.isPageUpdated) model.isPageUpdated = true
         model.titleLastPage = """
                ${model.title}
@@ -539,7 +542,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         } else Log.e(OCRTTSInter.TAG, "TextToSpeech 초기화 에러!")
     }
 
-    fun checkFile(dir: File): Boolean {
+    private fun checkFile(dir: File): Boolean {
         //디렉토리가 없으면 디렉토리를 만들고 그후에 파일을 카피
         if (!dir.exists() && dir.mkdirs()) copyFiles()
         //디렉토리가 있지만 파일이 없으면 파일카피 진행
@@ -551,7 +554,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         return true
     }
 
-    fun copyFiles() {
+    private fun copyFiles() {
         val assetMgr = this.assets
         val `is`: InputStream
         val os: OutputStream
@@ -572,7 +575,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         }
     }
 
-    private fun termiateService() {
+    private fun terminateService() {
         if (model.mIsBound) {
             val msg = Message.obtain(null, TransService.DISCONNECT, 0)
             try {
@@ -586,7 +589,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
     }
 
     public override fun onDestroy() {
-        termiateService()
+        terminateService()
         mTts.stop()
         mTts.shutdown()
         Log.i("onDestroy", "onDestroy()")
