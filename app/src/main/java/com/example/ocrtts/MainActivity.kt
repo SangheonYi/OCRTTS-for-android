@@ -18,6 +18,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -400,6 +401,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     @Synchronized
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
