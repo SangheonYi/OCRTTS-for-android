@@ -111,8 +111,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                     Log.i("띠띠에스", "재생 or 일시정지 State : " + model.state + " isSpeaking : " + mTts.isSpeaking)
                     if (model.state == "playing" && mTts.isSpeaking) mPlayButton.setImageResource(R.drawable.pause_states) else mPlayButton.setImageResource(R.drawable.play_states)
                 }
-                else -> {
-                }
             }
         }
     }
@@ -558,18 +556,18 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
 
     private fun copyFiles() {
         val assetMgr = this.assets
-        val `is`: InputStream
+        val inStream: InputStream
         val os: OutputStream
         try {
-            `is` = assetMgr.open("tessdata/" + model.lang + ".traineddata")
+            inStream = assetMgr.open("tessdata/" + model.lang + ".traineddata")
             val destFile = model.dataPath + "/tessdata/" + model.lang + ".traineddata"
             os = FileOutputStream(destFile)
             val buffer = ByteArray(1024)
             var read: Int
-            while (`is`.read(buffer).also { read = it } != -1) {
+            while (inStream.read(buffer).also { read = it } != -1) {
                 os.write(buffer, 0, read)
             }
-            `is`.close()
+            inStream.close()
             os.flush()
             os.close()
         } catch (e: IOException) {
