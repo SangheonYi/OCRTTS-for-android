@@ -7,6 +7,8 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
 import android.os.*
+import android.os.VibrationEffect.DEFAULT_AMPLITUDE
+import android.os.VibrationEffect.createOneShot
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.speech.tts.TextToSpeech
@@ -492,7 +494,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 intent.putExtra("pageNum", model.totalPageNum)
                 model.mIsBound = bindService(intent, mConnection, BIND_AUTO_CREATE)
             }
-            Log.i("OCR",  model.threadIndex.toString() + "번째 스레드의 run")
+            Log.i("OCR", model.threadIndex.toString() + "번째 스레드의 run")
             while (model.page < model.clipData!!.itemCount) {
                 try {
                     urione = model.clipData!!.getItemAt(model.page).uri
@@ -516,6 +518,11 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 if (model.state == "playing") mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READ_HIGHLIGHT, 0)) //읽는 중일 시 강조
             }
             Log.i("OCR", "스레드 끝남")
+            val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                vibrator.vibrate(createOneShot(2000, 150))
+            else
+                vibrator.vibrate(500)
             terminateService()
         }
     }
