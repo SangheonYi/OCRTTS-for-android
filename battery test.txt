@@ -1,0 +1,74 @@
+adb shell dumpsys batterystats > D:\\batt.txt
+adb shell dumpsys batterystats --enable full-wake-history
+장시간 화면 잠금 모드 전환 없이 모니터링을 계속하려면 full wake lock 기능 활성화 필요
+
+adb shell dumpsys batterystats --reset
+기록되어 있던 모든 출력 내용 초기화
+
+adb shell dumpsys batterystats --charged
+마지막으로 충전한 이후부터 출력
+
+adb shell dumpsys batterystats --charged com.example.ocrtts > D:\\batt.txt
+필터를 걸어 특정 패키지 네임에 대한 배터리 상태 출력
+
+adb shell dumpsys batterystats –-charged com.example.ocrtts | FINDSTR /C:"Uid u0a630"
+
+maker
+Uid u0a630: 149 ( cpu=141 radio=8.21 sensor=0.511 ) Including smearing: 655 ( screen=486 proportional=19.9 )
+
+
+adb shell dumpsys batterystats --reset
+adb shell dumpsys batterystats --charged com.example.ocrtts > D:\\reset.txt
+adb shell dumpsys batterystats --charged com.example.ocrtts > D:\\batt.txt
+u0a604
+
+g7 thinQ로 테스트
+
+100장 변환 테스트
+screen on/off 비교
+	동작시간: 38m / 1h 20m
+	배터리: 13%(356mah) / 9%(240mah)
+
+screen on: 
+	Computed drain: 559, actual drain: 750-780
+	Uid u0a604: 286 ( cpu=286 ) Including smearing: 417 ( screen=119 proportional=12.0 )
+	동작시간: 39분 android studio profiling: no
+	
+	Computed drain: 558, actual drain: 750-780
+	Uid u0a604: 283 ( cpu=283 ) Including smearing: 435 ( screen=146 proportional=5.57 )
+	Unaccounted: 192 ( ) Including smearing: 0 ( ) Excluded from smearing
+	Screen: 147 Excluded from smearing
+	동작시간: 38분 배터리: 13% 356mah android studio profiling: no
+	
+	Computed drain: 816, actual drain: 1020-1050
+	Uid u0a604: 294 ( cpu=294 ) Including smearing: 465 ( screen=151 proportional=20.3 )
+	Screen: 268 Excluded from smearing
+	Unaccounted: 204 ( ) Including smearing: 0 ( ) Excluded from smearing
+	동작시간: 38분 android studio profiling: yes
+	
+	Computed drain: 552, actual drain: 840-870
+	Unaccounted: 288 ( ) Including smearing: 0 ( ) Excluded from smearing
+	Uid u0a604: 286 ( cpu=286 ) Including smearing: 417 ( screen=114 proportional=17.8 )
+	Screen: 115 Excluded from smearing
+	동작시간: 38분 배터리: 12% 343mah android studio profiling: yes
+	
+screen off: 
+	Computed drain: 570, actual drain: 930-960
+	Unaccounted: 360 ( ) Including smearing: 0 ( ) Excluded from smearing
+	Uid u0a604: 244 ( cpu=244 ) Including smearing: 258 ( proportional=13.9 )
+	동작시간: 1h 36m 배터리: 9% 245mah android studio profiling: no
+	
+	Computed drain: 530, actual drain: 870-900
+	Unaccounted: 340 ( ) Including smearing: 0 ( ) Excluded from smearing
+	Uid u0a604: 232 ( cpu=232 ) Including smearing: 244 ( proportional=12.2 )
+	동작시간: 1h 16m 배터리: 9% 232mah android studio profiling: no
+
+	Computed drain: 493, actual drain: 870-900
+	Unaccounted: 377 ( ) Including smearing: 0 ( ) Excluded from smearing
+	Uid u0a604: 262 ( cpu=262 wake=0.000694 ) Including smearing: 281 ( proportional=18.5 )
+	동작시간: 52분 배터리: 10% 273mah android studio profiling: yes
+	
+	Computed drain: 489, actual drain: 660-690
+	Unaccounted: 171 ( ) Including smearing: 0 ( ) Excluded from smearing
+	Uid u0a604: 276 ( cpu=276 ) Including smearing: 305 ( proportional=29.3 )
+	동작시간: 51분 배터리: 11% 279mah android studio profiling: yes
