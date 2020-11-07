@@ -26,8 +26,8 @@ g7 thinQ로 테스트
 
 100장 변환 테스트
 screen on/off 비교
-	동작시간: 38m / 1h 20m
-	배터리: 13%(356mah) / 9%(240mah)
+	동작시간: 38m / 1h 20m -> 속도 100% 차이
+	배터리: 13%(356mah) / 9%(240mah) -> 전체 배터리 4%, 효율 30% 차이
 
 screen on: 
 	Computed drain: 559, actual drain: 750-780
@@ -72,3 +72,8 @@ screen off:
 	Unaccounted: 171 ( ) Including smearing: 0 ( ) Excluded from smearing
 	Uid u0a604: 276 ( cpu=276 ) Including smearing: 305 ( proportional=29.3 )
 	동작시간: 51분 배터리: 11% 279mah android studio profiling: yes
+
+    Computed drain: 512, actual drain: 930-960
+    Unaccounted: 418 ( ) Including smearing: 0 ( ) Excluded from smearing
+    Uid u0a604: 257 ( cpu=257 ) Including smearing: 269 ( proportional=11.5 )
+    동작시간: 1h 14m 배터리: 9% 257mah android studio profiling: no
