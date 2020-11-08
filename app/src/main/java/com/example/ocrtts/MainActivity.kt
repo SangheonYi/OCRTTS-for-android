@@ -390,10 +390,11 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 Log.i("버튼", "앨범 버튼")
                 if (model.ocrIndex < 0) {
 //                    Intent intent = new Intent(Intent.ACTION_PICK);
+                    // Intent 한계 용량이 100kb다. 초과 시 binding 오류 발생
                     // ACTION_OPEN_DOCUMENT는 문서에 대한 지속적 장기적 액세스 권한을 받음. 사진 편집 등
-                    // val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
                     // ACTION_GET_CONTENT는 데이터 사본을 가져온다.
-                    val intent = Intent(Intent.ACTION_GET_CONTENT)
+//                    val intent = Intent(Intent.ACTION_GET_CONTENT)
                     //사진을 여러개 선택할수 있도록 한다
                     intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                     intent.type = "image/*"
@@ -416,10 +417,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 val dataUri = data!!.data
                 model.clipData = data.clipData
                 if (dataUri != null && model.clipData == null) {
+                    // 이미지 한 장만 선택했을 때
                     model.clipData = ClipData.newUri(contentResolver, "URI", dataUri)
                     Log.i("DB", "clipData : " + model.clipData)
                 }
                 if (model.clipData != null) {
+                    // 이미지 여러장 획득했을 때
                     val proj = arrayOf(MediaStore.Images.Media.RELATIVE_PATH)
                     contentResolver
                             .query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, proj, null, null, null).use { cursor ->
