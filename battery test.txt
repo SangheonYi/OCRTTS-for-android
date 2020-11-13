@@ -77,3 +77,14 @@ screen off:
     Unaccounted: 418 ( ) Including smearing: 0 ( ) Excluded from smearing
     Uid u0a604: 257 ( cpu=257 ) Including smearing: 269 ( proportional=11.5 )
     동작시간: 1h 14m 배터리: 9% 257mah android studio profiling: no
+
+screen off & background app :
+    Computed drain: 478, actual drain: 750-780
+    Unaccounted: 272 ( ) Including smearing: 0 ( ) Excluded from smearing
+    Uid u0a604: 269 ( cpu=269 ) Including smearing: 283 ( proportional=14.4 )
+    동작시간: 1h 2m 배터리: 10% 269mah android studio profiling: no
+
+    Computed drain: 508, actual drain: 750-780
+    Uid u0a604: 265 ( cpu=265 ) Including smearing: 282 ( proportional=16.9 )
+    Unaccounted: 242 ( ) Including smearing: 0 ( ) Excluded from smearing
+    동작시간: 1h 9m 배터리: 10% 265mah android studio profiling: no
