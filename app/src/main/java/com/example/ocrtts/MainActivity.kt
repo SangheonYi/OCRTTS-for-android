@@ -197,9 +197,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         sTess = TessBaseAPI()
         // Tesseract 인식 언어를 한국어로 설정 및 초기화
         model.dataPath = "$filesDir/tesseract"
-        if (checkFile(File(model.dataPath + "/tessdata"))) {
+        if (checkFile(File(model.dataPath + "/tessdata")))
             sTess!!.init(model.dataPath, model.lang)
-        }
 
         //데이터 관리
         myDBOpenHelper = MyDatabaseOpenHelper(mainActivityContext)
@@ -207,10 +206,10 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         myDBOpenHelper!!.create()
         mHandler = MainHandler()
         mActivityMessenger = Messenger(mHandler)
-        mEditOcrResult.setOnTouchListener({ view, event -> // 터치 이벤트 제거
+        mEditOcrResult.setOnTouchListener { view, event -> // 터치 이벤트 제거
             true
-        })
-        speedDialView.setOnActionSelectedListener(OnActionSelectedListener { speedDialActionItem ->
+        }
+        speedDialView.setOnActionSelectedListener { speedDialActionItem ->
             when (speedDialActionItem.id) {
                 R.id.fab_write_txt -> {
                     val writeOption = arrayOf("파일생성", "이어쓰기")
@@ -286,7 +285,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 }
                 else -> false
             }
-        })
+        }
         Log.i("onCreate()", "Thread.currentThread().getName()" + Thread.currentThread().name)
         mTts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             //음성 발성 listener
