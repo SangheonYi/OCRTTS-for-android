@@ -5,6 +5,7 @@ actually, this app is built for 'listening' to scanned or pictured books.
 ## Feature
 ### image translate into text
 * multiple images(jpg, gif, png) picked from android system UI app translate into text or speech.
+* Approximately you can pick 680 pages max. (now fixing to can pick more more images)
 * when you want to save file, first create txt file or select txt file by picker.
 * translation result text will be saved when app end.
 * when translating is too long, you can stop the application and next time you can continue the translation from next page you stopped.
