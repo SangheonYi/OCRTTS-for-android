@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
 import android.os.*
-import android.os.VibrationEffect.DEFAULT_AMPLITUDE
 import android.os.VibrationEffect.createOneShot
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -27,11 +26,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.googlecode.tesseract.android.TessBaseAPI
 import com.leinardi.android.speeddial.SpeedDialActionItem
 import com.leinardi.android.speeddial.SpeedDialView
-import com.leinardi.android.speeddial.SpeedDialView.OnActionSelectedListener
 import java.io.*
 import java.util.*
 
-class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnClickListener {
+class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     var model: OCRTTSModel = OCRTTSModel()
 
     //View
@@ -61,12 +59,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         override fun handleMessage(msg: Message) {
             val msgToService: Message
             when (msg.what) {
-                OCRTTSInter.VIEW_RESULT_SET -> mEditOcrResult.setText(model.ocrResult)
-                OCRTTSInter.VIEW_READING_STATE -> {
+                model.VIEW_RESULT_SET -> mEditOcrResult.setText(model.ocrResult)
+                model.VIEW_READING_STATE -> {
                     model.readState = model.bigText.size.toString() + "문장 중 " + (model.readIndex + 1) + "번째"
                     mEditReadingState.setText(model.readState)
                 }
-                OCRTTSInter.VIEW_READ_HIGHLIGHT -> {
+                model.VIEW_READ_HIGHLIGHT -> {
                     Log.i("띠띠에스", model.readIndex.toString() + "th 문장 3 강조 들옴 charsum : " + model.charSum)
                     mEditOcrResult.requestFocus()
                     if (model.readIndex < model.bigText.size && model.charSum + model.bigText.sentence[model.readIndex].length <= mEditOcrResult.length()) {
@@ -75,17 +73,17 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                         Log.i("띠띠에스", model.readIndex.toString() + "th 문장 시작 : " + model.charSum + " 끝 : " + (model.charSum + model.bigText.sentence[model.readIndex].length))
                     }
                 }
-                OCRTTSInter.VIEW_RESET -> {
+                model.VIEW_RESET -> {
                     model.readIndex = 0
                     model.charSum = 0
                     mEditOcrResult.clearFocus()
                     model.state = "Stop"
                     mTts.stop()
-                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READING_STATE, 0))
-                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
                     Log.i("띠띠에스", "리셋")
                 }
-                OCRTTSInter.VIEW_MAIN_PROGRESS -> {
+                model.VIEW_MAIN_PROGRESS -> {
                     try {
                         msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.ocrIndex, 0)
                         msgToService.replyTo = mActivityMessenger
@@ -96,7 +94,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                     mEditOCRProgress.setText(model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                     Log.i("띠띠에스", model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                 }
-                OCRTTSInter.VIEW_TRANS_DONE -> {
+                model.VIEW_TRANS_DONE -> {
                     try {
                         msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_DONE, model.ocrIndex)
                         msgToService.replyTo = mActivityMessenger
@@ -109,7 +107,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                     Log.i("띠띠에스", model.ocrIndex.toString() + "끝?")
                     model.ocrIndex = -1
                 }
-                OCRTTSInter.VIEW_BUTTON_IMG -> {
+                model.VIEW_BUTTON_IMG -> {
                     Log.i("띠띠에스", "재생 or 일시정지 State : " + model.state + " isSpeaking : " + mTts.isSpeaking)
                     if (model.state == "playing" && mTts.isSpeaking) mPlayButton.setImageResource(R.drawable.pause_states) else mPlayButton.setImageResource(R.drawable.play_states)
                 }
@@ -137,8 +135,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         setContentView(R.layout.activity_main)
         val mainActivityContext: Context = this
         //저장소 권한 확인 및 요청
-        Log.i("에헤라", "쓰기 권한 : " + PermissionUtil.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE))
-        Log.i("에헤라", "읽기 권한 : " + PermissionUtil.checkPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE))
+        Log.i("Storage permission", "쓰기 권한 : " + PermissionUtil.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE))
+        Log.i("Storage permission", "읽기 권한 : " + PermissionUtil.checkPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE))
         if (!(PermissionUtil.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                         && PermissionUtil.checkPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE))) {
             Log.i("에헤라", "권한 요청하러 들옴")
@@ -232,12 +230,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                                     0 -> {
                                         Log.i("frw", "저장 case 0 파일생성")
                                         intent = model.frw.createFile(model.MIME_TEXT, model.title)
-                                        startActivityForResult(intent, OCRTTSInter.CREATE_REQUEST_CODE)
+                                        startActivityForResult(intent, model.CREATE_REQUEST_CODE)
                                     }
                                     1 -> {
                                         Log.i("frw", "저장 case 1 이어쓰기")
                                         intent = model.frw.performFileSearch(model.MIME_TEXT)
-                                        startActivityForResult(intent, OCRTTSInter.EDIT_REQUEST_CODE)
+                                        startActivityForResult(intent, model.EDIT_REQUEST_CODE)
                                     }
                                 }
                             }
@@ -279,7 +277,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 R.id.fab_flush_edittxt -> {
                     Log.i("fab", "클릭 fab_flush_edittxt")
                     model.ocrResult = " "
-                    (mHandler as MainHandler).sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESULT_SET, 0)) //결과화면 set
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET, 0)) //결과화면 set
                     Toast.makeText(applicationContext, "Text cleared", Toast.LENGTH_LONG).show()
                     false
                 }
@@ -292,11 +290,11 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
             override fun onStart(utteranceId: String) {
                 Log.i("띠띠에스", model.readIndex.toString() + "번째null인지? : " + model.bigText.isSentenceNull(model.readIndex))
                 if (model.readIndex < model.bigText.size) {
-                    (mHandler as MainHandler).sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READING_STATE, 0))
-                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READ_HIGHLIGHT, 0))
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READ_HIGHLIGHT, 0))
                 } else {
                     Log.i("띠띠에스", "완독start")
-                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESET, 0))
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESET, 0))
                 }
                 Log.i("띠띠에스", "ReadIndex: " + model.readIndex + " 빅텍 Sentence:  @@" + model.bigText.sentence[model.readIndex] + "@@")
             }
@@ -304,11 +302,11 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
             override fun onDone(utteranceId: String) {
                 model.charSum += model.bigText.sentence[model.readIndex].length
                 Log.i("띠띠에스", "이야 다 시부렸어라")
-                (mHandler as MainHandler).sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READING_STATE, 0))
+                mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
                 model.readIndex++
                 if (model.readIndex < model.bigText.size) mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id") else {
                     Log.i("띠띠에스", "완독done")
-                    (mHandler as MainHandler).sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESET, 0))
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESET, 0))
                 }
             }
 
@@ -325,14 +323,14 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 if (!mTts.isSpeaking && model.bigText.size > 0 && !(model.bigText.size == 1 && model.bigText.isSentenceNull(0))) {
                     model.state = "playing"
                     mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
-                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
                 } else if (model.state == "playing") {
                     Log.i("버튼", "일시정지 버튼")
                     if (mTts.isSpeaking && model.state == "playing") {
                         model.state = "stop"
                         mTts.stop()
                     }
-                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
                 }
             }
             R.id.stop -> {
@@ -341,7 +339,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                     model.state = "stop"
                     mTts.stop()
                 }
-                mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESET, 0)) //리셋
+                mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESET, 0)) //리셋
             }
             R.id.before -> {
                 Log.i("버튼", "이전문장 버튼")
@@ -398,7 +396,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                     intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                     intent.type = "image/*"
                     Log.i("onCreate", "album startActivityForResult")
-                    startActivityForResult(intent, OCRTTSInter.PICTURE_REQUEST_CODE)
+                    startActivityForResult(intent, model.PICTURE_REQUEST_CODE)
                 }
             }
         }
@@ -411,7 +409,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         Log.i("onActivityResult", "resultCode: $resultCode")
         if (resultCode == RESULT_OK) {
             Log.i("onActivityResult", "requestCode: $requestCode")
-            if (requestCode == OCRTTSInter.PICTURE_REQUEST_CODE) {
+            if (requestCode == model.PICTURE_REQUEST_CODE) {
                 var pickedNumber = 0
                 val dataUri = data!!.data
                 model.clipData = data.clipData
@@ -456,7 +454,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                     thread.isDaemon = true
                     thread.start()
                 } else Log.i("DB", "pickedNumber가 0임")
-            } else if (requestCode == OCRTTSInter.CREATE_REQUEST_CODE || requestCode == OCRTTSInter.EDIT_REQUEST_CODE) {
+            } else if (requestCode == model.CREATE_REQUEST_CODE || requestCode == model.EDIT_REQUEST_CODE) {
                 if (data != null) {
                     model.safUri = data.data
                     Log.i("DB", "SAFUri: " + model.safUri)
@@ -512,12 +510,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
                 strBuilder.append(transResult)
                 model.bigText.addSentence(transResult)
                 if (model.ocrIndex < model.totalPageNum)
-                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_MAIN_PROGRESS, 0)) //변환 과정
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_MAIN_PROGRESS, 0)) //변환 과정
                 else
-                    mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_TRANS_DONE, 0)) //변환 끝
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_TRANS_DONE, 0)) //변환 끝
                 model.ocrResult = strBuilder.toString()
-                mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_RESULT_SET, 0)) //결과 화면 set
-                if (model.state == "playing") mHandler.sendMessage(Message.obtain(mHandler, OCRTTSInter.VIEW_READ_HIGHLIGHT, 0)) //읽는 중일 시 강조
+                mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET, 0)) //결과 화면 set
+                if (model.state == "playing") mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READ_HIGHLIGHT, 0)) //읽는 중일 시 강조
             }
             Log.i("OCR", "스레드 끝남")
             val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
@@ -549,9 +547,9 @@ class MainActivity : AppCompatActivity(), OnInitListener, OCRTTSInter, View.OnCl
         if (status == TextToSpeech.SUCCESS) {
             val result = mTts.setLanguage(Locale.KOREAN)
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED)
-                Log.e(OCRTTSInter.TAG, "TextToSpeech 초기화 에러!")
+                Log.e(model.TAG, "TextToSpeech 초기화 에러!")
             else mPlayButton.isEnabled = true
-        } else Log.e(OCRTTSInter.TAG, "TextToSpeech 초기화 에러!")
+        } else Log.e(model.TAG, "TextToSpeech 초기화 에러!")
     }
 
     private fun checkFile(dir: File): Boolean {
