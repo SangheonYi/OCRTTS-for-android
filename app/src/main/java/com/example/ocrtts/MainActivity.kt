@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.*
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.net.Uri
 import android.os.*
 import android.os.VibrationEffect.createOneShot
@@ -15,68 +14,61 @@ import android.speech.tts.TextToSpeech.OnInitListener
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import android.view.View
-import android.widget.EditText
-import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.res.ResourcesCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.googlecode.tesseract.android.TessBaseAPI
-import com.leinardi.android.speeddial.SpeedDialActionItem
-import com.leinardi.android.speeddial.SpeedDialView
 import java.io.*
 import java.util.*
 
 class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
+    private val mainActivity = this
+
+    //Model
     var model: OCRTTSModel = OCRTTSModel()
 
     //View
-    private lateinit var mEditOcrResult: EditText //변환된 Text View
-    private lateinit var mEditReadingState: EditText //읽는 상태 View
-    private lateinit var mEditOCRProgress: EditText //OCR 진행 상태
-    private lateinit var albumButton: ImageButton
-    private lateinit var mPlayButton: ImageButton
-    private lateinit var mStopButton: ImageButton
-    private lateinit var mBeforeButton: ImageButton
-    private lateinit var mNextButton: ImageButton
-    private lateinit var mFasterButton: ImageButton
-    private lateinit var mSlowerButton: ImageButton
-    private lateinit var speedDialView: SpeedDialView
-    private lateinit var mTts: TextToSpeech
+    var views: MyView = MyView()
 
     //Data
     private var myDBOpenHelper: MyDatabaseOpenHelper? = null
+    private lateinit var mTts: TextToSpeech
 
     //Communicate
     var mHandler = MainHandler()
     var mServiceMessenger: Messenger? = null
     var mActivityMessenger: Messenger? = null
 
+    //OCR
+    var sTess: TessBaseAPI? = null
+
     @SuppressLint("HandlerLeak")
     inner class MainHandler : Handler() {
         override fun handleMessage(msg: Message) {
             val msgToService: Message
             when (msg.what) {
-                model.VIEW_RESULT_SET -> mEditOcrResult.setText(model.ocrResult)
+                model.VIEW_RESULT_SET -> views.mEditOcrResult.setText(model.ocrResult)
                 model.VIEW_READING_STATE -> {
                     model.readState = model.bigText.size.toString() + "문장 중 " + (model.readIndex + 1) + "번째"
-                    mEditReadingState.setText(model.readState)
+                    views.mEditReadingState.setText(model.readState)
                 }
                 model.VIEW_READ_HIGHLIGHT -> {
                     Log.i("띠띠에스", model.readIndex.toString() + "th 문장 3 강조 들옴 charsum : " + model.charSum)
-                    mEditOcrResult.requestFocus()
-                    if (model.readIndex < model.bigText.size && model.charSum + model.bigText.sentence[model.readIndex].length <= mEditOcrResult.length()) {
+                    views.mEditOcrResult.requestFocus()
+                    if (model.readIndex < model.bigText.size &&
+                            model.charSum + model.bigText.sentence[model.readIndex].length <= views.mEditOcrResult.length())
+                    {
                         Log.i("띠띠에스", model.readIndex.toString() + "th 문장 길이 : " + model.bigText.sentence[model.readIndex].length + " charsum : " + model.charSum)
-                        mEditOcrResult.setSelection(model.charSum, model.charSum + model.bigText.sentence[model.readIndex].length)
+                        views.mEditOcrResult.setSelection(model.charSum, model.charSum + model.bigText.sentence[model.readIndex].length)
                         Log.i("띠띠에스", model.readIndex.toString() + "th 문장 시작 : " + model.charSum + " 끝 : " + (model.charSum + model.bigText.sentence[model.readIndex].length))
                     }
                 }
                 model.VIEW_RESET -> {
                     model.readIndex = 0
                     model.charSum = 0
-                    mEditOcrResult.clearFocus()
+                    views.mEditOcrResult.clearFocus()
                     model.state = "Stop"
                     mTts.stop()
                     mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
@@ -91,7 +83,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     } catch (e: RemoteException) {
                         e.printStackTrace()
                     }
-                    mEditOCRProgress.setText(model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
+                    views.mEditOCRProgress.setText(model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                     Log.i("띠띠에스", model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                 }
                 model.VIEW_TRANS_DONE -> {
@@ -102,14 +94,15 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     } catch (e: RemoteException) {
                         e.printStackTrace()
                     }
-                    mEditOCRProgress.setText(model.totalPageNum.toString() + "장 Done")
-                    mEditOcrResult.append(" ")
+                    views.mEditOCRProgress.setText(model.totalPageNum.toString() + "장 Done")
+                    views.mEditOcrResult.append(" ")
                     Log.i("띠띠에스", model.ocrIndex.toString() + "끝?")
                     model.ocrIndex = -1
                 }
                 model.VIEW_BUTTON_IMG -> {
                     Log.i("띠띠에스", "재생 or 일시정지 State : " + model.state + " isSpeaking : " + mTts.isSpeaking)
-                    if (model.state == "playing" && mTts.isSpeaking) mPlayButton.setImageResource(R.drawable.pause_states) else mPlayButton.setImageResource(R.drawable.play_states)
+                    if (model.state == "playing" && mTts.isSpeaking) views.mPlayButton.setImageResource(R.drawable.pause_states)
+                    else views.mPlayButton.setImageResource(R.drawable.play_states)
                 }
             }
         }
@@ -133,90 +126,48 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val mainActivityContext: Context = this
         //저장소 권한 확인 및 요청
-        Log.i("Storage permission", "쓰기 권한 : " + PermissionUtil.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE))
-        Log.i("Storage permission", "읽기 권한 : " + PermissionUtil.checkPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE))
-        if (!(PermissionUtil.checkPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        && PermissionUtil.checkPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE))) {
+        Log.i("Storage permission", "쓰기 권한 : " + PermissionUtil.checkPermissions(mainActivity, Manifest.permission.WRITE_EXTERNAL_STORAGE))
+        Log.i("Storage permission", "읽기 권한 : " + PermissionUtil.checkPermissions(mainActivity, Manifest.permission.READ_EXTERNAL_STORAGE))
+        if (!(PermissionUtil.checkPermissions(mainActivity, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        && PermissionUtil.checkPermissions(mainActivity, Manifest.permission.READ_EXTERNAL_STORAGE))) {
             Log.i("에헤라", "권한 요청하러 들옴")
-            PermissionUtil.requestExternalPermissions(this)
+            PermissionUtil.requestExternalPermissions(mainActivity)
         }
         // 뷰 할당
-        mEditOcrResult = findViewById(R.id.edit_ocrresult)
-        mEditReadingState = findViewById(R.id.ReadingState_bar)
-        mEditOCRProgress = findViewById(R.id.OCRprogress_bar)
-        mPlayButton = findViewById(R.id.play)
-        mStopButton = findViewById(R.id.stop)
-        mBeforeButton = findViewById(R.id.before)
-        mNextButton = findViewById(R.id.next)
-        mFasterButton = findViewById(R.id.faster)
-        mSlowerButton = findViewById(R.id.slower)
-        albumButton = findViewById(R.id.btn_album)
-        mPlayButton.setOnClickListener(this)
-        mStopButton.setOnClickListener(this)
-        mSlowerButton.setOnClickListener(this)
-        mFasterButton.setOnClickListener(this)
-        mBeforeButton.setOnClickListener(this)
-        mNextButton.setOnClickListener(this)
-        albumButton.setOnClickListener(this)
-        speedDialView = findViewById(R.id.speedDial)
-        speedDialView.addActionItem(
-                SpeedDialActionItem.Builder(R.id.fab_write_txt, R.drawable.content_save_outline)
-                        .setLabel(getString(R.string.label_fab_create_txt))
-                        .setLabelColor(Color.WHITE)
-                        .setLabelBackgroundColor(ResourcesCompat.getColor(resources, R.color.material_blue_500, theme))
-                        .setLabelClickable(false)
-                        .setTheme(R.style.AppTheme)
-                        .create()
-        )
-        speedDialView.addActionItem(
-                SpeedDialActionItem.Builder(R.id.fab_DB, R.drawable.delete_outline)
-                        .setLabel(getString(R.string.label_fab_DB))
-                        .setLabelColor(Color.WHITE)
-                        .setLabelBackgroundColor(ResourcesCompat.getColor(resources, R.color.material_blue_500, theme))
-                        .setLabelClickable(false)
-                        .setTheme(R.style.AppTheme)
-                        .create()
-        )
-        speedDialView.addActionItem(
-                SpeedDialActionItem.Builder(R.id.fab_flush_edittxt, R.drawable.refresh)
-                        .setLabel(getString(R.string.label_fab_flush_edittxt))
-                        .setLabelColor(Color.WHITE)
-                        .setLabelBackgroundColor(ResourcesCompat.getColor(resources, R.color.material_blue_500, theme))
-                        .setLabelClickable(false)
-                        .setTheme(R.style.AppTheme)
-                        .create()
-        )
-        mTts = TextToSpeech(mainActivityContext, this)
+        views.viewsCreate(mainActivity)
+
+        //TTS
+        mTts = TextToSpeech(mainActivity, mainActivity)
         val mTtsMap = HashMap<String, String>()
         mTtsMap[TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID] = "unique_id"
         mTts.setSpeechRate(model.readSpeed.toFloat())
-        sTess = TessBaseAPI()
+
         // Tesseract 인식 언어를 한국어로 설정 및 초기화
+        sTess = TessBaseAPI()
         model.dataPath = "$filesDir/tesseract"
         if (checkFile(File(model.dataPath + "/tessdata")))
             sTess!!.init(model.dataPath, model.lang)
 
         //데이터 관리
-        myDBOpenHelper = MyDatabaseOpenHelper(mainActivityContext)
+        myDBOpenHelper = MyDatabaseOpenHelper(mainActivity)
         myDBOpenHelper!!.open()
         myDBOpenHelper!!.create()
         mHandler = MainHandler()
         mActivityMessenger = Messenger(mHandler)
-        mEditOcrResult.setOnTouchListener { view, event -> // 터치 이벤트 제거
-            true
-        }
-        speedDialView.setOnActionSelectedListener { speedDialActionItem ->
+        
+        // 터치 이벤트 제거
+        views.mEditOcrResult.setOnTouchListener { view, event -> true }
+        views.speedDialView.setOnActionSelectedListener { speedDialActionItem ->
             when (speedDialActionItem.id) {
                 R.id.fab_write_txt -> {
                     val writeOption = arrayOf("파일생성", "이어쓰기")
                     val checkedOption = intArrayOf(1)
                     Log.i("fab", "클릭 fab_write_txt")
                     //대화상자 설정
-                    val fileState = TextView(mainActivityContext)
+                    val fileState = TextView(mainActivity)
                     if (model.frw.getfName() == null) fileState.hint = "저장할 파일이 없습니다." else fileState.text = model.frw.getfName()
-                    val writeMADB = MaterialAlertDialogBuilder(mainActivityContext)
+                    val writeMADB = MaterialAlertDialogBuilder(mainActivity)
                     writeMADB.setTitle("파일 저장")
                             .setSingleChoiceItems(writeOption, checkedOption[0]) { dialog, which ->
                                 when (which) {
@@ -248,7 +199,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     Log.i("fab", "클릭 fab_DB")
                     val listDialogCursor = myDBOpenHelper!!.sortColumn("title")
                     listDialogCursor.moveToFirst()
-                    MaterialAlertDialogBuilder(mainActivityContext)
+                    MaterialAlertDialogBuilder(mainActivity)
                             .setTitle("변환 기록")
                             .setMultiChoiceItems(listDialogCursor, "check_bool", "title_last_page") { dialog, picked, isChekced ->
                                 var which = picked
@@ -537,7 +488,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         if (model.threadIndex > 0 && myDBOpenHelper!!.isNewTitle(model.title)) {
             if (myDBOpenHelper!!.insertColumn(model.title, model.page.toLong(), model.titleLastPage, 0) != -1L)
                 Log.i("DB", "DB에 삽입됨 : " + model.title + "  " + model.page) else Log.i("DB", "DB에 삽입 에러 -1 : " + model.title + "  " + model.page)
-        } else if (model.threadIndex > 0 && !myDBOpenHelper!!.isNewTitle(model.title)) {
+        }
+        else if (model.threadIndex > 0 && !myDBOpenHelper!!.isNewTitle(model.title)) {
             if (myDBOpenHelper!!.updateColumn(myDBOpenHelper!!.getIdByTitle(model.title), model.title, model.page.toLong(), model.titleLastPage, 0))
                 Log.i("DB", "DB 갱신 됨 : " + model.title + "  " + model.page) else Log.i("DB", "DB 갱신 실패 updateColumn <= 0 : " + model.title + "  " + model.page)
         }
@@ -548,7 +500,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             val result = mTts.setLanguage(Locale.KOREAN)
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED)
                 Log.e(model.TAG, "TextToSpeech 초기화 에러!")
-            else mPlayButton.isEnabled = true
+            else views.mPlayButton.isEnabled = true
         } else Log.e(model.TAG, "TextToSpeech 초기화 에러!")
     }
 
@@ -565,7 +517,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     }
 
     private fun copyFiles() {
-        val assetMgr = this.assets
+        val assetMgr = mainActivity.assets
         val inStream: InputStream
         val os: OutputStream
         try {
@@ -604,7 +556,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         mTts.shutdown()
         Log.i("onDestroy", "onDestroy()")
         if (model.threadIndex > 0 && model.safUri != null) {
-            model.frw.alterDocument(this, model.ocrResult, model.safUri)
+            model.frw.alterDocument(mainActivity, model.ocrResult, model.safUri)
             setBookTable()
         } else Log.i("onPause()", "thread is negative")
         sTess!!.clear()
@@ -630,10 +582,5 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     public override fun onStop() {
         super.onStop()
         Log.i("LifeCycle", "onStop() 호출")
-    }
-
-    companion object {
-        //OCR
-        var sTess: TessBaseAPI? = null
     }
 }
