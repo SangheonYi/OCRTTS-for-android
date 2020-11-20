@@ -27,21 +27,19 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     private val mainActivity = this
 
     //Model
-    var model: OCRTTSModel = OCRTTSModel()
+    var model: MyModel = MyModel()
 
     //View
     var views: MyView = MyView()
 
-    //Data
+    //Control
     private var myDBOpenHelper: MyDatabaseOpenHelper? = null
-    private lateinit var mTts: TextToSpeech
-
-    //Communicate
     var mHandler = MainHandler()
     var mServiceMessenger: Messenger? = null
     var mActivityMessenger: Messenger? = null
 
-    //OCR
+    //TTS, OCR
+    private lateinit var mTts: TextToSpeech
     var sTess: TessBaseAPI? = null
 
     @SuppressLint("HandlerLeak")

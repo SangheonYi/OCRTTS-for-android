@@ -2,9 +2,8 @@ package com.example.ocrtts
 
 import android.content.ClipData
 import android.net.Uri
-import java.io.Serializable
 
-class OCRTTSModel internal constructor() {
+class MyModel internal constructor() {
     //const
     val PICTURE_REQUEST_CODE = 100
     val CREATE_REQUEST_CODE = 101

@@ -70,8 +70,6 @@ class TransService : Service() {
                     notifiManagerCompat!!.cancel(notificationId)
                     Log.i("serviceHandler", "VIEW_TRANS_DONE: " + msg.arg1 + "끝?")
                 }
-                else -> {
-                }
             }
         }
     }
