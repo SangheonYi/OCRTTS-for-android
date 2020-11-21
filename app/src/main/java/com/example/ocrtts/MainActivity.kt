@@ -21,6 +21,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.googlecode.tesseract.android.TessBaseAPI
 import java.io.*
+import java.net.URI
 import java.util.*
 
 class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
@@ -40,7 +41,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
 
     //TTS, OCR
     private lateinit var mTts: TextToSpeech
-    var sTess: TessBaseAPI? = null
 
     @SuppressLint("HandlerLeak")
     inner class MainHandler : Handler() {
@@ -56,8 +56,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     Log.i("띠띠에스", model.readIndex.toString() + "th 문장 3 강조 들옴 charsum : " + model.charSum)
                     views.mEditOcrResult.requestFocus()
                     if (model.readIndex < model.bigText.size &&
-                            model.charSum + model.bigText.sentence[model.readIndex].length <= views.mEditOcrResult.length())
-                    {
+                            model.charSum + model.bigText.sentence[model.readIndex].length <= views.mEditOcrResult.length()) {
                         Log.i("띠띠에스", model.readIndex.toString() + "th 문장 길이 : " + model.bigText.sentence[model.readIndex].length + " charsum : " + model.charSum)
                         views.mEditOcrResult.setSelection(model.charSum, model.charSum + model.bigText.sentence[model.readIndex].length)
                         Log.i("띠띠에스", model.readIndex.toString() + "th 문장 시작 : " + model.charSum + " 끝 : " + (model.charSum + model.bigText.sentence[model.readIndex].length))
@@ -106,7 +105,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         }
     }
 
-    private val mConnection: ServiceConnection = object : ServiceConnection {
+    val mConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
             mServiceMessenger = Messenger(iBinder)
             try {
@@ -142,10 +141,10 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         mTts.setSpeechRate(model.readSpeed.toFloat())
 
         // Tesseract 인식 언어를 한국어로 설정 및 초기화
-        sTess = TessBaseAPI()
+        model.sTess = TessBaseAPI()
         model.dataPath = "$filesDir/tesseract"
         if (checkFile(File(model.dataPath + "/tessdata")))
-            sTess!!.init(model.dataPath, model.lang)
+            model.sTess!!.init(model.dataPath, model.lang)
 
         //데이터 관리
         myDBOpenHelper = MyDatabaseOpenHelper(mainActivity)
@@ -153,29 +152,28 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         myDBOpenHelper!!.create()
         mHandler = MainHandler()
         mActivityMessenger = Messenger(mHandler)
-        
+
         // 터치 이벤트 제거
         views.mEditOcrResult.setOnTouchListener { view, event -> true }
         views.speedDialView.setOnActionSelectedListener { speedDialActionItem ->
             when (speedDialActionItem.id) {
                 R.id.fab_write_txt -> {
                     val writeOption = arrayOf("파일생성", "이어쓰기")
-                    val checkedOption = intArrayOf(1)
+                    var checkedOption = 1
+                    val fileState = TextView(mainActivity)
+
                     Log.i("fab", "클릭 fab_write_txt")
                     //대화상자 설정
-                    val fileState = TextView(mainActivity)
-                    if (model.frw.getfName() == null) fileState.hint = "저장할 파일이 없습니다." else fileState.text = model.frw.getfName()
-                    val writeMADB = MaterialAlertDialogBuilder(mainActivity)
-                    writeMADB.setTitle("파일 저장")
-                            .setSingleChoiceItems(writeOption, checkedOption[0]) { dialog, which ->
-                                when (which) {
-                                    0 -> checkedOption[0] = 0
-                                    1 -> checkedOption[0] = 1
-                                }
+                    if (model.frw.getfName() == null) fileState.hint = "저장할 파일이 없습니다."
+                    else fileState.text = model.frw.getfName()
+                    views.writeMADB.setTitle("파일 저장")
+                            .setSingleChoiceItems(writeOption, checkedOption) { dialog, which ->
+                                checkedOption = which
                             }
                             .setPositiveButton("Ok") { dialog, which ->
                                 val intent: Intent
-                                when (checkedOption[0]) {
+
+                                when (checkedOption) {
                                     0 -> {
                                         Log.i("frw", "저장 case 0 파일생성")
                                         intent = model.frw.createFile(model.MIME_TEXT, model.title)
@@ -196,6 +194,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 R.id.fab_DB -> {
                     Log.i("fab", "클릭 fab_DB")
                     val listDialogCursor = myDBOpenHelper!!.sortColumn("title")
+
                     listDialogCursor.moveToFirst()
                     MaterialAlertDialogBuilder(mainActivity)
                             .setTitle("변환 기록")
@@ -217,6 +216,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                             }
                             .setPositiveButton("Ok") { dialog, which ->
                                 val cursor = myDBOpenHelper!!.sortColumn("title")
+
                                 while (cursor.moveToNext())
                                     if (cursor.getInt(4) == 1) myDBOpenHelper!!.deleteTuple(cursor.getInt(0).toLong(), 0)
                             }
@@ -334,21 +334,76 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             }
             R.id.btn_album -> {
                 Log.i("버튼", "앨범 버튼")
-                if (model.ocrIndex < 0) {
-//                    Intent intent = new Intent(Intent.ACTION_PICK);
-                    // Intent 한계 용량이 100kb다. 초과 시 binding 오류 발생
-                    // ACTION_OPEN_DOCUMENT는 문서에 대한 지속적 장기적 액세스 권한을 받음. 사진 편집 등
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-                    // ACTION_GET_CONTENT는 데이터 사본을 가져온다.
-//                    val intent = Intent(Intent.ACTION_GET_CONTENT)
-                    //사진을 여러개 선택할수 있도록 한다
-                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                    intent.type = "image/*"
-                    Log.i("onCreate", "album startActivityForResult")
-                    startActivityForResult(intent, model.PICTURE_REQUEST_CODE)
-                }
+                if (model.ocrIndex < 0) albumClick()
             }
         }
+    }
+
+    private fun albumClick() {
+        val writeOption = arrayOf("직접 선택(680장 이하)", "폴더 단위로 변환")
+        var checkedOption = 1
+
+        Log.i("fab", "클릭 fab_write_txt")
+        //대화상자 설정
+        views.albumMADB.setTitle("이미지 가져오기")
+                .setSingleChoiceItems(writeOption, checkedOption)
+                { dialog, which -> checkedOption = which }
+                .setPositiveButton("Ok") { dialog, which ->
+                    when (checkedOption) {
+                        0 -> {
+                            // Intent 한계 용량이 100kb다. 초과 시 binding 오류 발생
+                            // ACTION_OPEN_DOCUMENT는 문서에 대한 지속적 장기적 액세스 권한을 받음. 사진 편집 등
+                            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+                            // ACTION_GET_CONTENT는 데이터 사본을 가져온다.
+                            // val intent = Intent(Intent.ACTION_GET_CONTENT)
+                            //사진을 여러개 선택할수 있도록 한다
+                            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                            intent.type = "image/*"
+                            Log.i("onCreate", "album startActivityForResult")
+                            startActivityForResult(intent, model.PICTURE_REQUEST_CODE)
+                        }
+                        1 -> pickFolders()
+                    }
+                }
+                .show()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    fun pickFolders() {
+        val projection = arrayOf(MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME)
+        val cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                projection, null, null, null)
+        val folderList = ArrayList<String>()
+        val pickedFolder = ArrayList<String>()
+        val folderMADB = MaterialAlertDialogBuilder(mainActivity)
+        val checkBool: BooleanArray
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                if (!folderList.contains(cursor.getString(0))) {
+                    // Log.i("앨범", "id: " + cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media._ID)));
+                    Log.i("앨범", "0 index: " + cursor.getString(0))
+                    folderList.add(cursor.getString(0))
+                }
+            }
+            cursor.close()
+        }
+        Log.i("fab", "클릭 fab_write_txt")
+        //대화상자 설정
+        checkBool = BooleanArray(folderList.size) { false }
+        folderMADB.setTitle("폴더 단위로 변환")
+                .setMultiChoiceItems(folderList.toTypedArray(), checkBool)
+                { dialog, which, isChecked ->
+                    if (isChecked) {
+                        Log.i("folder pick", folderList[which])
+                        pickedFolder.add(folderList[which])
+                    }
+                }
+                .setPositiveButton("Ok") { dialog, which ->
+                    Log.i("folder pick", which.toString())
+                    onActivityResult(model.PICTURE_REQUEST_CODE, RESULT_OK, Intent())
+                }
+                .show()
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -358,67 +413,88 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         Log.i("onActivityResult", "resultCode: $resultCode")
         if (resultCode == RESULT_OK) {
             Log.i("onActivityResult", "requestCode: $requestCode")
-            if (requestCode == model.PICTURE_REQUEST_CODE) {
+            if (requestCode == model.PICTURE_REQUEST_CODE ||
+                    requestCode == model.FOLDER_REQUEST_CODE) {
+                // OCR translate
                 var pickedNumber = 0
-                val dataUri = data!!.data
-                model.clipData = data.clipData
-                if (dataUri != null && model.clipData == null) {
-                    // 이미지 한 장만 선택했을 때
-                    model.clipData = ClipData.newUri(contentResolver, "URI", dataUri)
-                    Log.i("DB", "clipData : " + model.clipData)
+                val dataUri: Uri?
+                val proj: Array<String>
+                val thread: OCR
+
+                when(requestCode) {
+                    model.PICTURE_REQUEST_CODE -> {
+                        dataUri = data!!.data
+                        model.clipData = data.clipData
+                        if (dataUri != null && model.clipData == null) {
+                            // 이미지 한 장만 선택했을 때
+                            model.clipData = ClipData.newUri(contentResolver, "URI", dataUri)
+                            Log.i("DB", "clipData : " + model.clipData)
+                        }
+                        if (model.clipData != null) {
+                            // 이미지 여러장 획득했을 때
+                            proj = arrayOf(MediaStore.Images.Media.RELATIVE_PATH)
+                            contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, proj, null, null, null)
+                                    .use { cursor ->
+                                        if (cursor != null && cursor.moveToFirst()) {
+                                            /*
+                                    String[] colNames;
+                                    colNames = cursor.getColumnNames();
+                                    Log.i("DB", "getColumnCount: " + cursor.getColumnCount());
+                                    for (int i = 0; i < colNames.length; i++)
+                                    {
+                                        Log.i("DB", "colNames" + i +" : " + colNames[i] + " : " + cursor.getString(i));
+                                    }
+                                    */
+                                            model.title = cursor.getString(0).split("/".toRegex()).toTypedArray()[1]
+                                        }
+                                    }
+                            model.page = myDBOpenHelper!!.getContinuePage(model.title)
+                            Log.i("DB", "선택한 폴더(책 제목) : " + model.title)
+                            pickedNumber = model.clipData!!.itemCount
+                            if (myDBOpenHelper!!.isNewTitle(model.title)) {
+                                model.isPageUpdated = false
+                                Toast.makeText(applicationContext, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
+                            }
+                            else if (model.page < pickedNumber) {
+                                model.isPageUpdated = false
+                                Toast.makeText(applicationContext, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
+                            }
+                            else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
+                        } else Log.i("DB", "clipData가 null")
+                    }
+                    model.FOLDER_REQUEST_CODE -> {
+
+                    }
                 }
-                if (model.clipData != null) {
-                    // 이미지 여러장 획득했을 때
-                    val proj = arrayOf(MediaStore.Images.Media.RELATIVE_PATH)
-                    contentResolver
-                            .query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, proj, null, null, null).use { cursor ->
-                                if (cursor != null && cursor.moveToFirst()) {
-                                    /*
-                            String[] colNames;
-                            colNames = cursor.getColumnNames();
-                            Log.i("DB", "getColumnCount: " + cursor.getColumnCount());
-                            for (int i = 0; i < colNames.length; i++)
-                            {
-                                Log.i("DB", "colNames" + i +" : " + colNames[i] + " : " + cursor.getString(i));
-                            }
-                            */
-                                    model.title = cursor.getString(0).split("/".toRegex()).toTypedArray()[1]
-                                }
-                            }
-                    model.page = myDBOpenHelper!!.getContinuePage(model.title)
-                    Log.i("DB", "선택한 폴더(책 제목) : " + model.title)
-                    pickedNumber = model.clipData!!.itemCount
-                    if (myDBOpenHelper!!.isNewTitle(model.title)) {
-                        model.isPageUpdated = false
-                        Toast.makeText(applicationContext, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
-                    } else if (model.page < pickedNumber) {
-                        model.isPageUpdated = false
-                        Toast.makeText(applicationContext, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
-                    } else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
-                } else Log.i("DB", "clipData가 null")
                 if (pickedNumber > 0) {
                     model.threadIndex++ //생성한 스레드 수
                     model.totalPageNum = pickedNumber - model.page
-                    val thread = OCR() // OCR 진행할 스레드
+                    thread = OCR(model, mainActivity) // OCR 진행할 스레드
                     thread.isDaemon = true
                     thread.start()
+                    terminateService()
                 } else Log.i("DB", "pickedNumber가 0임")
-            } else if (requestCode == model.CREATE_REQUEST_CODE || requestCode == model.EDIT_REQUEST_CODE) {
+            }
+            else if (requestCode == model.CREATE_REQUEST_CODE ||
+                    requestCode == model.EDIT_REQUEST_CODE) {
                 if (data != null) {
+                    var pathStr = ""
+                    val pathArray: Array<String>
+
                     model.safUri = data.data
                     Log.i("DB", "SAFUri: " + model.safUri)
                     Log.i("DB", "SAFUri.getPath: " + model.safUri!!.path)
-                    var pathStr = ""
                     Log.i("DB", "uri: " + model.safUri)
-                    contentResolver.query(model.safUri!!, null, null, null, null).use { cursor ->
-                        assert(cursor != null)
-                        if (cursor!!.moveToFirst()) {
-                            Log.i("DB", "OpenableColumns.DISPLAY_NAME: " + OpenableColumns.DISPLAY_NAME)
-                            pathStr = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
-                            Log.i("DB", "pathStr: $pathStr")
-                        }
+                    contentResolver.query(model.safUri!!, null, null, null, null)
+                            .use { cursor ->
+                                if (BuildConfig.DEBUG && cursor == null) error("Assertion failed")
+                                if (cursor!!.moveToFirst()) {
+                                    Log.i("DB", "OpenableColumns.DISPLAY_NAME: " + OpenableColumns.DISPLAY_NAME)
+                                    pathStr = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
+                                    Log.i("DB", "pathStr: $pathStr")
+                                }
                     }
-                    val pathArray = pathStr.split("/".toRegex()).toTypedArray()
+                    pathArray = pathStr.split("/".toRegex()).toTypedArray()
                     Log.i("DB", "선택한 파일 경로 $pathStr")
                     model.frw.setfName(pathArray[pathArray.size - 1])
                 } else Log.i("onActivityResult", "data가 null")
@@ -427,7 +503,11 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         //갤러리 이미지 변환
     }
 
-    private inner class OCR  // 초기화 작업
+    fun pickedPicture() {
+
+    }
+
+ /*   private inner class OCR  // 초기화 작업
         : Thread() {
         @Synchronized
         override fun run() {
@@ -439,7 +519,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             strBuilder.append(model.ocrResult)
             if (model.page < model.clipData!!.itemCount) {
                 model.ocrIndex = 0
-                val intent = Intent(applicationContext, TransService::class.java)
+                val intent = Intent(mainActivity, TransService::class.java)
                 intent.putExtra("pageNum", model.totalPageNum)
                 model.mIsBound = bindService(intent, mConnection, BIND_AUTO_CREATE)
             }
@@ -451,11 +531,11 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }
-                sTess!!.setImage(image)
+                model.sTess!!.setImage(image)
                 model.ocrIndex++
                 model.page++
                 Log.i("OCR", "getUTF8Text가 OCR변환 끝나고 값 받을 때 까지 기다림. 그냥 변환 중이란 얘기")
-                transResult = sTess!!.utF8Text
+                transResult = model.sTess!!.utF8Text
                 strBuilder.append(transResult)
                 model.bigText.addSentence(transResult)
                 if (model.ocrIndex < model.totalPageNum)
@@ -475,7 +555,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             terminateService()
         }
     }
-
+*/
     private fun setBookTable() {
         if (!model.isPageUpdated) model.isPageUpdated = true
         model.titleLastPage = """
@@ -486,8 +566,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         if (model.threadIndex > 0 && myDBOpenHelper!!.isNewTitle(model.title)) {
             if (myDBOpenHelper!!.insertColumn(model.title, model.page.toLong(), model.titleLastPage, 0) != -1L)
                 Log.i("DB", "DB에 삽입됨 : " + model.title + "  " + model.page) else Log.i("DB", "DB에 삽입 에러 -1 : " + model.title + "  " + model.page)
-        }
-        else if (model.threadIndex > 0 && !myDBOpenHelper!!.isNewTitle(model.title)) {
+        } else if (model.threadIndex > 0 && !myDBOpenHelper!!.isNewTitle(model.title)) {
             if (myDBOpenHelper!!.updateColumn(myDBOpenHelper!!.getIdByTitle(model.title), model.title, model.page.toLong(), model.titleLastPage, 0))
                 Log.i("DB", "DB 갱신 됨 : " + model.title + "  " + model.page) else Log.i("DB", "DB 갱신 실패 updateColumn <= 0 : " + model.title + "  " + model.page)
         }
@@ -557,8 +636,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             model.frw.alterDocument(mainActivity, model.ocrResult, model.safUri)
             setBookTable()
         } else Log.i("onPause()", "thread is negative")
-        sTess!!.clear()
-        sTess!!.end()
+        model.sTess!!.clear()
+        model.sTess!!.end()
         super.onDestroy()
     }
 

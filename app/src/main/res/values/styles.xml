@@ -29,5 +29,11 @@
         <item name="android:scaleType">centerCrop</item>
     </style>
 
-
+    // styles.xml
+    <style name="MyAlertDialogStyle" parent="Theme.AppCompat.Light.Dialog">
+        <item name="colorPrimary">@color/material_blue_500</item>
+        <item name="colorPrimaryDark">@color/material_blue_700</item>
+        <item name="colorAccent">@color/material_blue_a700</item>
+        <item name="android:alertDialogTheme">@style/MyAlertDialogStyle</item>
+    </style>
 </resources>

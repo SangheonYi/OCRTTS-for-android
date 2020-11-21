@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.widget.EditText
 import android.widget.ImageButton
 import androidx.core.content.res.ResourcesCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.leinardi.android.speeddial.SpeedDialActionItem
 import com.leinardi.android.speeddial.SpeedDialView
 
@@ -19,6 +20,8 @@ class MyView {
     lateinit var mFasterButton: ImageButton
     lateinit var mSlowerButton: ImageButton
     lateinit var speedDialView: SpeedDialView
+    lateinit var writeMADB: MaterialAlertDialogBuilder
+    lateinit var albumMADB: MaterialAlertDialogBuilder
 
     fun viewsCreate(main: MainActivity){
         val resources = main.resources
@@ -37,6 +40,10 @@ class MyView {
         mSlowerButton = main.findViewById(R.id.slower)
         albumButton = main.findViewById(R.id.btn_album)
         speedDialView = main.findViewById(R.id.speedDial)
+
+        // Dialog
+        writeMADB = MaterialAlertDialogBuilder(main)
+        albumMADB = MaterialAlertDialogBuilder(main)
 
         mPlayButton.setOnClickListener(main)
         mStopButton.setOnClickListener(main)

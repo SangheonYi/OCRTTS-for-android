@@ -2,12 +2,14 @@ package com.example.ocrtts
 
 import android.content.ClipData
 import android.net.Uri
+import com.googlecode.tesseract.android.TessBaseAPI
 
 class MyModel internal constructor() {
     //const
     val PICTURE_REQUEST_CODE = 100
     val CREATE_REQUEST_CODE = 101
     val EDIT_REQUEST_CODE = 102
+    val FOLDER_REQUEST_CODE = 103
     val VIEW_RESULT_SET = 0
     val VIEW_READING_STATE = 1
     val VIEW_READ_HIGHLIGHT = 2
@@ -19,6 +21,7 @@ class MyModel internal constructor() {
     val MIME_TEXT = "text/plain"
 
     //OCR
+    var sTess: TessBaseAPI? = null
     var dataPath = "" //can
     var lang = "kor"//can
     var ocrIndex = -1 //OCR 진행 중인 이미지 번호
