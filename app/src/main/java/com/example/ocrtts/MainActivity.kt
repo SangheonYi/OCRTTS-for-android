@@ -3,10 +3,8 @@ package com.example.ocrtts
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.*
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.*
-import android.os.VibrationEffect.createOneShot
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.speech.tts.TextToSpeech
@@ -21,7 +19,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.googlecode.tesseract.android.TessBaseAPI
 import java.io.*
-import java.net.URI
 import java.util.*
 
 class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
@@ -375,7 +372,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 projection, null, null, null)
         val folderList = ArrayList<String>()
         val pickedFolder = ArrayList<String>()
-        val folderMADB = MaterialAlertDialogBuilder(mainActivity)
         val checkBool: BooleanArray
 
         if (cursor != null) {
@@ -391,7 +387,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         Log.i("fab", "클릭 fab_write_txt")
         //대화상자 설정
         checkBool = BooleanArray(folderList.size) { false }
-        folderMADB.setTitle("폴더 단위로 변환")
+        views.folderMADB.setTitle("폴더 단위로 변환")
                 .setMultiChoiceItems(folderList.toTypedArray(), checkBool)
                 { dialog, which, isChecked ->
                     if (isChecked) {
@@ -417,55 +413,41 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     requestCode == model.FOLDER_REQUEST_CODE) {
                 // OCR translate
                 var pickedNumber = 0
-                val dataUri: Uri?
-                val proj: Array<String>
                 val thread: OCR
+                val proj = arrayOf(MediaStore.Images.Media.RELATIVE_PATH)
 
-                when(requestCode) {
-                    model.PICTURE_REQUEST_CODE -> {
-                        dataUri = data!!.data
-                        model.clipData = data.clipData
-                        if (dataUri != null && model.clipData == null) {
-                            // 이미지 한 장만 선택했을 때
-                            model.clipData = ClipData.newUri(contentResolver, "URI", dataUri)
-                            Log.i("DB", "clipData : " + model.clipData)
+                // picked image list allocate
+                allocClipData(requestCode, data)
+                // image meta data parsing
+                /*contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, proj, null, null, null)
+                        .use { cursor ->
+                            if (cursor != null && cursor.moveToFirst()) {
+                                *//*
+                        String[] colNames;
+                        colNames = cursor.getColumnNames();
+                        Log.i("DB", "getColumnCount: " + cursor.getColumnCount());
+                        for (int i = 0; i < colNames.length; i++)
+                        {
+                            Log.i("DB", "colNames" + i +" : " + colNames[i] + " : " + cursor.getString(i));
                         }
-                        if (model.clipData != null) {
-                            // 이미지 여러장 획득했을 때
-                            proj = arrayOf(MediaStore.Images.Media.RELATIVE_PATH)
-                            contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, proj, null, null, null)
-                                    .use { cursor ->
-                                        if (cursor != null && cursor.moveToFirst()) {
-                                            /*
-                                    String[] colNames;
-                                    colNames = cursor.getColumnNames();
-                                    Log.i("DB", "getColumnCount: " + cursor.getColumnCount());
-                                    for (int i = 0; i < colNames.length; i++)
-                                    {
-                                        Log.i("DB", "colNames" + i +" : " + colNames[i] + " : " + cursor.getString(i));
-                                    }
-                                    */
-                                            model.title = cursor.getString(0).split("/".toRegex()).toTypedArray()[1]
-                                        }
-                                    }
-                            model.page = myDBOpenHelper!!.getContinuePage(model.title)
-                            Log.i("DB", "선택한 폴더(책 제목) : " + model.title)
-                            pickedNumber = model.clipData!!.itemCount
-                            if (myDBOpenHelper!!.isNewTitle(model.title)) {
-                                model.isPageUpdated = false
-                                Toast.makeText(applicationContext, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
+                        *//*
+                                model.title = cursor.getString(0).split("/".toRegex()).toTypedArray()[1]
                             }
-                            else if (model.page < pickedNumber) {
-                                model.isPageUpdated = false
-                                Toast.makeText(applicationContext, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
-                            }
-                            else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
-                        } else Log.i("DB", "clipData가 null")
-                    }
-                    model.FOLDER_REQUEST_CODE -> {
-
-                    }
+                        }*/
+                // TODO folder 제목 추출 다시! 쿼리로 이상한 짓만 했자나!
+                model.uriList[0]
+                model.page = myDBOpenHelper!!.getContinuePage(model.title)
+                Log.i("DB", "선택한 폴더(책 제목) : " + model.title)
+                pickedNumber = model.uriList.size
+                if (myDBOpenHelper!!.isNewTitle(model.title)) {
+                    model.isPageUpdated = false
+                    Toast.makeText(applicationContext, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
                 }
+                else if (model.page < pickedNumber) {
+                    model.isPageUpdated = false
+                    Toast.makeText(applicationContext, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
+                }
+                else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
                 if (pickedNumber > 0) {
                     model.threadIndex++ //생성한 스레드 수
                     model.totalPageNum = pickedNumber - model.page
@@ -503,8 +485,22 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         //갤러리 이미지 변환
     }
 
-    fun pickedPicture() {
+    fun allocClipData(requestCode: Int, data: Intent?) {
+        when(requestCode) {
+            model.PICTURE_REQUEST_CODE -> {
+                if (data!!.data != null) {
+                    // 이미지 한 장만 선택했을 때
+                    model.uriList.add(data.data!!)
+                    Log.i("DB", "clipData : " + model.uriList)
+                }
+                else if (data.clipData != null)
+                    for (i in 0 until data.clipData!!.itemCount)
+                        model.uriList.add(data.clipData!!.getItemAt(i).uri)
+            }
+            model.FOLDER_REQUEST_CODE -> {
 
+            }
+        }
     }
 
  /*   private inner class OCR  // 초기화 작업

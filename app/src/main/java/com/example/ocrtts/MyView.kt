@@ -22,6 +22,7 @@ class MyView {
     lateinit var speedDialView: SpeedDialView
     lateinit var writeMADB: MaterialAlertDialogBuilder
     lateinit var albumMADB: MaterialAlertDialogBuilder
+    lateinit var folderMADB: MaterialAlertDialogBuilder
 
     fun viewsCreate(main: MainActivity){
         val resources = main.resources
@@ -44,6 +45,7 @@ class MyView {
         // Dialog
         writeMADB = MaterialAlertDialogBuilder(main)
         albumMADB = MaterialAlertDialogBuilder(main)
+        folderMADB = MaterialAlertDialogBuilder(main)
 
         mPlayButton.setOnClickListener(main)
         mStopButton.setOnClickListener(main)

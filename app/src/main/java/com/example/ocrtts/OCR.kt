@@ -26,16 +26,16 @@ class OCR(inModel: MyModel, inMain: MainActivity)  // 초기화 작업
     @Synchronized
     override fun run() {
         strBuilder.append(model.ocrResult)
-        if (model.page < model.clipData!!.itemCount) {
+        if (model.page < model.uriList!!.size) {
             model.ocrIndex = 0
             intent = Intent(main, TransService::class.java)
             intent.putExtra("pageNum", model.totalPageNum)
             model.mIsBound = main.bindService(intent, main.mConnection, AppCompatActivity.BIND_AUTO_CREATE)
         }
         Log.i("OCR", model.threadIndex.toString() + "번째 스레드의 run")
-        while (model.page < model.clipData!!.itemCount) {
+        while (model.page < model.uriList.size) {
             try {
-                urione = model.clipData!!.getItemAt(model.page).uri
+                urione = model.uriList[model.page]
                 image = MediaStore.Images.Media.getBitmap(main.contentResolver, urione)
             } catch (e: IOException) {
                 e.printStackTrace()

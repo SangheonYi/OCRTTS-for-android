@@ -27,7 +27,8 @@ class MyModel internal constructor() {
     var ocrIndex = -1 //OCR 진행 중인 이미지 번호
     var threadIndex = 0 //thread 시행횟수
     var totalPageNum = 0
-    var clipData: ClipData? = null
+//    var clipData: ClipData? = null
+    var uriList = ArrayList<Uri>()
 
     //Text, TTS
     var ocrResult = " " //OCR 결과값 받음
