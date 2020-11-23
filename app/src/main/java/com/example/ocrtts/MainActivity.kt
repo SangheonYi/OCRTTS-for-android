@@ -412,30 +412,15 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             if (requestCode == model.PICTURE_REQUEST_CODE ||
                     requestCode == model.FOLDER_REQUEST_CODE) {
                 // OCR translate
-                var pickedNumber = 0
+                var pickedNumber: Int
                 val thread: OCR
-                val proj = arrayOf(MediaStore.Images.Media.RELATIVE_PATH)
+                val proj = arrayOf(MediaStore.Images.Media.RELATIVE_PATH, "_data")
+
 
                 // picked image list allocate
-                allocClipData(requestCode, data)
+                model.allocClipData(requestCode, data, mainActivity)
                 // image meta data parsing
-                /*contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, proj, null, null, null)
-                        .use { cursor ->
-                            if (cursor != null && cursor.moveToFirst()) {
-                                *//*
-                        String[] colNames;
-                        colNames = cursor.getColumnNames();
-                        Log.i("DB", "getColumnCount: " + cursor.getColumnCount());
-                        for (int i = 0; i < colNames.length; i++)
-                        {
-                            Log.i("DB", "colNames" + i +" : " + colNames[i] + " : " + cursor.getString(i));
-                        }
-                        *//*
-                                model.title = cursor.getString(0).split("/".toRegex()).toTypedArray()[1]
-                            }
-                        }*/
-                // TODO folder 제목 추출 다시! 쿼리로 이상한 짓만 했자나!
-                model.uriList[0]
+                // TODO 폴더 단위 변환이면 OCR에서 매 폴더마다 체크해주자.
                 model.page = myDBOpenHelper!!.getContinuePage(model.title)
                 Log.i("DB", "선택한 폴더(책 제목) : " + model.title)
                 pickedNumber = model.uriList.size
@@ -483,24 +468,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             }
         }
         //갤러리 이미지 변환
-    }
-
-    fun allocClipData(requestCode: Int, data: Intent?) {
-        when(requestCode) {
-            model.PICTURE_REQUEST_CODE -> {
-                if (data!!.data != null) {
-                    // 이미지 한 장만 선택했을 때
-                    model.uriList.add(data.data!!)
-                    Log.i("DB", "clipData : " + model.uriList)
-                }
-                else if (data.clipData != null)
-                    for (i in 0 until data.clipData!!.itemCount)
-                        model.uriList.add(data.clipData!!.getItemAt(i).uri)
-            }
-            model.FOLDER_REQUEST_CODE -> {
-
-            }
-        }
     }
 
  /*   private inner class OCR  // 초기화 작업

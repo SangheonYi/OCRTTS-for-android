@@ -1,7 +1,10 @@
 package com.example.ocrtts
 
-import android.content.ClipData
+import android.content.Intent
+import android.database.Cursor
 import android.net.Uri
+import android.provider.OpenableColumns
+import android.util.Log
 import com.googlecode.tesseract.android.TessBaseAPI
 
 class MyModel internal constructor() {
@@ -50,4 +53,32 @@ class MyModel internal constructor() {
 
     //Service
     var mIsBound = false
+
+    fun allocClipData(requestCode: Int, data: Intent?, main: MainActivity) {
+        when(requestCode) {
+            PICTURE_REQUEST_CODE -> {
+                val curs: Cursor?
+
+                if (data!!.data != null) {
+                    // 이미지 한 장만 선택했을 때
+                    uriList.add(data.data!!)
+                    Log.i("DB", "clipData : " + uriList)
+                }
+                else if (data.clipData != null)
+                    for (i in 0 until data.clipData!!.itemCount)
+                        uriList.add(data.clipData!!.getItemAt(i).uri)
+
+                curs = main.contentResolver.query(uriList[0], arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                curs!!.moveToNext()
+                title = curs.getString(0)
+            }
+            FOLDER_REQUEST_CODE -> {
+
+            }
+        }
+    }
+
+    fun imageMetaCheck() {
+
+    }
 }
