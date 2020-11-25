@@ -3,7 +3,6 @@ package com.example.ocrtts
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.*
-import android.net.Uri
 import android.os.*
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -367,8 +366,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     fun pickFolders() {
-        val projection = arrayOf(MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME)
-        val cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        var projection = arrayOf(MediaStore.Images.ImageColumns.RELATIVE_PATH)
+        var cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection, null, null, null)
         val folderList = ArrayList<String>()
         val pickedFolder = ArrayList<String>()
@@ -377,7 +376,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         if (cursor != null) {
             while (cursor.moveToNext()) {
                 if (!folderList.contains(cursor.getString(0))) {
-                    // Log.i("앨범", "id: " + cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media._ID)));
                     Log.i("앨범", "0 index: " + cursor.getString(0))
                     folderList.add(cursor.getString(0))
                 }
@@ -390,13 +388,26 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         views.folderMADB.setTitle("폴더 단위로 변환")
                 .setMultiChoiceItems(folderList.toTypedArray(), checkBool)
                 { dialog, which, isChecked ->
-                    if (isChecked) {
+                    if (isChecked && !pickedFolder.contains(folderList[which])) {
                         Log.i("folder pick", folderList[which])
                         pickedFolder.add(folderList[which])
                     }
                 }
                 .setPositiveButton("Ok") { dialog, which ->
                     Log.i("folder pick", which.toString())
+                    for (e in pickedFolder) {
+                        //선택한 폴더들의 이미지들 Uri 획득하기
+                        projection = arrayOf(MediaStore.Images.ImageColumns._ID, MediaStore.Images.ImageColumns.DISPLAY_NAME, MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME)
+                        cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                projection,
+                                MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME + " = ?"
+                                , arrayOf(e), model.sortOrder)
+                        Log.i("folder pick", "colname " + cursor!!.columnNames.contentToString())
+                        while (cursor!!.moveToNext()){
+                            Log.i("folder pick", "add: ${cursor!!.getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.DISPLAY_NAME))}")
+                            model.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(0)))
+                        }
+                    }
                     onActivityResult(model.PICTURE_REQUEST_CODE, RESULT_OK, Intent())
                 }
                 .show()
@@ -427,12 +438,10 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 if (myDBOpenHelper!!.isNewTitle(model.title)) {
                     model.isPageUpdated = false
                     Toast.makeText(applicationContext, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
-                }
-                else if (model.page < pickedNumber) {
+                } else if (model.page < pickedNumber) {
                     model.isPageUpdated = false
                     Toast.makeText(applicationContext, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
-                }
-                else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
+                } else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
                 if (pickedNumber > 0) {
                     model.threadIndex++ //생성한 스레드 수
                     model.totalPageNum = pickedNumber - model.page
@@ -441,8 +450,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     thread.start()
                     terminateService()
                 } else Log.i("DB", "pickedNumber가 0임")
-            }
-            else if (requestCode == model.CREATE_REQUEST_CODE ||
+            } else if (requestCode == model.CREATE_REQUEST_CODE ||
                     requestCode == model.EDIT_REQUEST_CODE) {
                 if (data != null) {
                     var pathStr = ""
@@ -460,7 +468,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                                     pathStr = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
                                     Log.i("DB", "pathStr: $pathStr")
                                 }
-                    }
+                            }
                     pathArray = pathStr.split("/".toRegex()).toTypedArray()
                     Log.i("DB", "선택한 파일 경로 $pathStr")
                     model.frw.setfName(pathArray[pathArray.size - 1])
@@ -470,55 +478,55 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         //갤러리 이미지 변환
     }
 
- /*   private inner class OCR  // 초기화 작업
-        : Thread() {
-        @Synchronized
-        override fun run() {
-            var image: Bitmap? = null //갤러리에서 이미지 받아와
-            var transResult: String?
-            val strBuilder = StringBuilder()
-            var urione: Uri?
+    /*   private inner class OCR  // 초기화 작업
+           : Thread() {
+           @Synchronized
+           override fun run() {
+               var image: Bitmap? = null //갤러리에서 이미지 받아와
+               var transResult: String?
+               val strBuilder = StringBuilder()
+               var urione: Uri?
 
-            strBuilder.append(model.ocrResult)
-            if (model.page < model.clipData!!.itemCount) {
-                model.ocrIndex = 0
-                val intent = Intent(mainActivity, TransService::class.java)
-                intent.putExtra("pageNum", model.totalPageNum)
-                model.mIsBound = bindService(intent, mConnection, BIND_AUTO_CREATE)
-            }
-            Log.i("OCR", model.threadIndex.toString() + "번째 스레드의 run")
-            while (model.page < model.clipData!!.itemCount) {
-                try {
-                    urione = model.clipData!!.getItemAt(model.page).uri
-                    image = MediaStore.Images.Media.getBitmap(contentResolver, urione)
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-                model.sTess!!.setImage(image)
-                model.ocrIndex++
-                model.page++
-                Log.i("OCR", "getUTF8Text가 OCR변환 끝나고 값 받을 때 까지 기다림. 그냥 변환 중이란 얘기")
-                transResult = model.sTess!!.utF8Text
-                strBuilder.append(transResult)
-                model.bigText.addSentence(transResult)
-                if (model.ocrIndex < model.totalPageNum)
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_MAIN_PROGRESS, 0)) //변환 과정
-                else
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_TRANS_DONE, 0)) //변환 끝
-                model.ocrResult = strBuilder.toString()
-                mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET, 0)) //결과 화면 set
-                if (model.state == "playing") mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READ_HIGHLIGHT, 0)) //읽는 중일 시 강조
-            }
-            Log.i("OCR", "스레드 끝남")
-            val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                vibrator.vibrate(createOneShot(2000, 150))
-            else
-                vibrator.vibrate(500)
-            terminateService()
-        }
-    }
-*/
+               strBuilder.append(model.ocrResult)
+               if (model.page < model.clipData!!.itemCount) {
+                   model.ocrIndex = 0
+                   val intent = Intent(mainActivity, TransService::class.java)
+                   intent.putExtra("pageNum", model.totalPageNum)
+                   model.mIsBound = bindService(intent, mConnection, BIND_AUTO_CREATE)
+               }
+               Log.i("OCR", model.threadIndex.toString() + "번째 스레드의 run")
+               while (model.page < model.clipData!!.itemCount) {
+                   try {
+                       urione = model.clipData!!.getItemAt(model.page).uri
+                       image = MediaStore.Images.Media.getBitmap(contentResolver, urione)
+                   } catch (e: IOException) {
+                       e.printStackTrace()
+                   }
+                   model.sTess!!.setImage(image)
+                   model.ocrIndex++
+                   model.page++
+                   Log.i("OCR", "getUTF8Text가 OCR변환 끝나고 값 받을 때 까지 기다림. 그냥 변환 중이란 얘기")
+                   transResult = model.sTess!!.utF8Text
+                   strBuilder.append(transResult)
+                   model.bigText.addSentence(transResult)
+                   if (model.ocrIndex < model.totalPageNum)
+                       mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_MAIN_PROGRESS, 0)) //변환 과정
+                   else
+                       mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_TRANS_DONE, 0)) //변환 끝
+                   model.ocrResult = strBuilder.toString()
+                   mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET, 0)) //결과 화면 set
+                   if (model.state == "playing") mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READ_HIGHLIGHT, 0)) //읽는 중일 시 강조
+               }
+               Log.i("OCR", "스레드 끝남")
+               val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+               if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                   vibrator.vibrate(createOneShot(2000, 150))
+               else
+                   vibrator.vibrate(500)
+               terminateService()
+           }
+       }
+   */
     private fun setBookTable() {
         if (!model.isPageUpdated) model.isPageUpdated = true
         model.titleLastPage = """

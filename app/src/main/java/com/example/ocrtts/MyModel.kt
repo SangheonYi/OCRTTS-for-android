@@ -3,6 +3,7 @@ package com.example.ocrtts
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
 import com.googlecode.tesseract.android.TessBaseAPI
@@ -50,6 +51,7 @@ class MyModel internal constructor() {
     var page = 0
     var titleLastPage = "$title\nPage: $page"
     var isPageUpdated = false
+    val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
 
     //Service
     var mIsBound = false
@@ -68,7 +70,8 @@ class MyModel internal constructor() {
                     for (i in 0 until data.clipData!!.itemCount)
                         uriList.add(data.clipData!!.getItemAt(i).uri)
 
-                curs = main.contentResolver.query(uriList[0], arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                curs = main.contentResolver.query(uriList[0], arrayOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+                        , null, null, null)
                 curs!!.moveToNext()
                 title = curs.getString(0)
             }
