@@ -18,7 +18,7 @@ class MyModel internal constructor() {
     val VIEW_READING_STATE = 1
     val VIEW_READ_HIGHLIGHT = 2
     val VIEW_RESET = 3
-    val VIEW_MAIN_PROGRESS = 4
+    val VIEW_PROGRESS_ING = 4
     val VIEW_TRANS_DONE = 5
     val VIEW_BUTTON_IMG = 6
     val TAG = "TextToSpeech"

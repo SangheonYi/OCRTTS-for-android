@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
                     Log.i("띠띠에스", "리셋")
                 }
-                model.VIEW_MAIN_PROGRESS -> {
+                model.VIEW_PROGRESS_ING -> {
                     try {
                         msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.ocrIndex, 0)
                         msgToService.replyTo = mActivityMessenger
@@ -103,9 +103,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
 
     val mConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
+            val msg: Message
+
             mServiceMessenger = Messenger(iBinder)
+            mainActivity.mHandler.sendMessage(Message.obtain(mainActivity.mHandler, model.VIEW_PROGRESS_ING, 0)) //변환 과정
             try {
-                val msg = Message.obtain(null, TransService.CONNECT, 0)
+                msg = Message.obtain(null, TransService.CONNECT, 0)
                 msg.replyTo = mActivityMessenger
                 mServiceMessenger!!.send(msg)
             } catch (e: RemoteException) {

@@ -26,7 +26,7 @@ class OCR(inModel: MyModel, inMain: MainActivity)  // 초기화 작업
     @Synchronized
     override fun run() {
         strBuilder.append(model.ocrResult)
-        if (model.page < model.uriList!!.size) {
+        if (model.page < model.uriList.size) {
             model.ocrIndex = 0
             intent = Intent(main, TransService::class.java)
             intent.putExtra("pageNum", model.totalPageNum)
@@ -48,7 +48,7 @@ class OCR(inModel: MyModel, inMain: MainActivity)  // 초기화 작업
             strBuilder.append(transResult)
             model.bigText.addSentence(transResult)
             if (model.ocrIndex < model.totalPageNum)
-                main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_MAIN_PROGRESS, 0)) //변환 과정
+                main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_PROGRESS_ING, 0)) //변환 과정
             else
                 main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_TRANS_DONE, 0)) //변환 끝
             model.ocrResult = strBuilder.toString()
