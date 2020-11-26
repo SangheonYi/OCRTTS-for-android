@@ -397,18 +397,18 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     Log.i("folder pick", which.toString())
                     for (e in pickedFolder) {
                         //선택한 폴더들의 이미지들 Uri 획득하기
-                        projection = arrayOf(MediaStore.Images.ImageColumns._ID, MediaStore.Images.ImageColumns.DISPLAY_NAME, MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME)
+                        projection = arrayOf(MediaStore.Images.ImageColumns._ID, MediaStore.Images.ImageColumns.RELATIVE_PATH)
                         cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                                 projection,
-                                MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME + " = ?"
+                                MediaStore.Images.ImageColumns.RELATIVE_PATH + " = ?"
                                 , arrayOf(e), model.sortOrder)
                         Log.i("folder pick", "colname " + cursor!!.columnNames.contentToString())
                         while (cursor!!.moveToNext()){
-                            Log.i("folder pick", "add: ${cursor!!.getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.DISPLAY_NAME))}")
+                            Log.i("folder pick", "add: ${cursor!!.getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.RELATIVE_PATH))}")
                             model.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(0)))
                         }
                     }
-                    onActivityResult(model.PICTURE_REQUEST_CODE, RESULT_OK, Intent())
+                    onActivityResult(model.FOLDER_REQUEST_CODE, RESULT_OK, Intent())
                 }
                 .show()
     }
@@ -426,7 +426,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 var pickedNumber: Int
                 val thread: OCR
                 val proj = arrayOf(MediaStore.Images.Media.RELATIVE_PATH, "_data")
-
 
                 // picked image list allocate
                 model.allocClipData(requestCode, data, mainActivity)

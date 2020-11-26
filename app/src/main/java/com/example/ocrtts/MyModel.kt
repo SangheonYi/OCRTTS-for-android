@@ -57,26 +57,29 @@ class MyModel internal constructor() {
     var mIsBound = false
 
     fun allocClipData(requestCode: Int, data: Intent?, main: MainActivity) {
+        val curs: Cursor?
+
         when(requestCode) {
             PICTURE_REQUEST_CODE -> {
-                val curs: Cursor?
-
                 if (data!!.data != null) {
                     // 이미지 한 장만 선택했을 때
                     uriList.add(data.data!!)
                     Log.i("DB", "clipData : " + uriList)
-                }
-                else if (data.clipData != null)
+                } else if (data.clipData != null)
                     for (i in 0 until data.clipData!!.itemCount)
                         uriList.add(data.clipData!!.getItemAt(i).uri)
-
-                curs = main.contentResolver.query(uriList[0], arrayOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
-                        , null, null, null)
-                curs!!.moveToNext()
-                title = curs.getString(0)
             }
             FOLDER_REQUEST_CODE -> {
-
+                Log.i("DB", "FOLDER_REQUEST_CODE")
+            }
+        }
+        if (uriList.isNotEmpty()) {
+            curs = main.contentResolver.query(uriList[0],
+                    arrayOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME),
+                    null, null, null)
+            if (curs != null) {
+                curs.moveToNext()
+                title = curs.getString(0)
             }
         }
     }
