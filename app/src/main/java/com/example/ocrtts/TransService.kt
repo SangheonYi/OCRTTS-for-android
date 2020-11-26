@@ -61,15 +61,16 @@ class TransService : Service() {
                     Log.i("serviceHandler", "DISCONNECT")
                 }
                 VIEW_NOTIFI_PROGRESS -> {
-                    builder!!.setProgress(totalPageNum, msg.arg1, false)
-                            .setContentText(msg.arg1.toString() + " / " + totalPageNum)
-                    Log.i("MSG", "service msg arg1 receive: ${msg.arg1}")
+                    builder!!.setProgress(totalPageNum, msg.obj.toString().toInt(), false)
+                            .setContentText(msg.obj.toString() + " / " + totalPageNum)
+                    Log.i("MSG", "service msg arg1 receive: ${msg.obj}")
                     notifiManagerCompat!!.notify(notificationId, builder!!.build())
-                    Log.i("serviceHandler", "VIEW_NOTIFI_PROGRESS: " + totalPageNum + "장 중 " + msg.arg1 + "장 변환")
+                    Log.i("serviceHandler", "VIEW_NOTIFI_PROGRESS: " + totalPageNum + "장 중 " + msg.obj + "장 변환")
                 }
                 VIEW_NOTIFI_DONE -> {
                     notifiManagerCompat!!.cancel(notificationId)
-                    Log.i("serviceHandler", "VIEW_TRANS_DONE: " + msg.arg1 + "끝?")
+                    stopForeground(true)
+                    Log.i("serviceHandler", "VIEW_NOTIFI_DONE: " + msg.obj + "끝?")
                 }
             }
         }

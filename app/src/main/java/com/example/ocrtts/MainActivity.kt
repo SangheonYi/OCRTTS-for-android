@@ -69,6 +69,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     Log.i("띠띠에스", "리셋")
                 }
                 model.VIEW_PROGRESS_ING -> {
+                    Log.i("MSG", "OCR service send")
                     try {
                         msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.ocrIndex)
                         msgToService.replyTo = mActivityMessenger
@@ -77,7 +78,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                         e.printStackTrace()
                     }
                     views.mEditOCRProgress.setText(model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
-                    Log.i("띠띠에스", model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
+                    Log.i("VIEW_PROGRESS_ING", model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                 }
 
                 //###############################################################################################
@@ -106,11 +107,14 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
 
     val mConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
-            val msg: Message
+            var msg: Message
 
             mServiceMessenger = Messenger(iBinder)
-            mainActivity.mHandler.sendMessage(Message.obtain(mainActivity.mHandler, model.VIEW_PROGRESS_ING, 0)) //변환 과정
+            Log.i("MSG", "onServiceConnected main send")
+            msg = Message.obtain(null, model.VIEW_PROGRESS_ING, 0)
+            mActivityMessenger!!.send(msg) //변환 과정
             try {
+                Log.i("MSG", "onServiceConnected service send")
                 msg = Message.obtain(null, TransService.CONNECT, 0)
                 msg.replyTo = mActivityMessenger
                 mServiceMessenger!!.send(msg)
@@ -543,6 +547,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     }
 
     private fun terminateService() {
+        Log.i("Service", "terminateService called is bound? ${model.mIsBound}")
         if (model.mIsBound) {
             val msg = Message.obtain(null, TransService.DISCONNECT, 0)
 

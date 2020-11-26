@@ -47,15 +47,16 @@ class OCR(inModel: MyModel, inMain: MainActivity)  // 초기화 작업
             transResult = model.sTess!!.utF8Text
             strBuilder.append(transResult)
             model.bigText.addSentence(transResult)
+            Log.i("MSG", "OCR main send")
             if (model.ocrIndex < model.totalPageNum)
-                main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_PROGRESS_ING, 0)) //변환 과정
+                main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_PROGRESS_ING)) //변환 과정
             model.ocrResult = strBuilder.toString()
-            main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_RESULT_SET, 0)) //결과 화면 set
+            main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_RESULT_SET)) //결과 화면 set
             if (model.state == "playing") main.mHandler.sendMessage(
-                    Message.obtain(main.mHandler, model.VIEW_READ_HIGHLIGHT, 0)) //읽는 중일 시 강조
+                    Message.obtain(main.mHandler, model.VIEW_READ_HIGHLIGHT)) //읽는 중일 시 강조
         }
-        main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_TRANS_DONE, 0)) //변환 끝
-        main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_RESULT_SET, 0)) //결과 화면 set
+        main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_TRANS_DONE)) //변환 끝
+        main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_RESULT_SET)) //결과 화면 set
         Log.i("OCR", "스레드 끝남")
         vibrator = main.getSystemService(AppCompatActivity.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
