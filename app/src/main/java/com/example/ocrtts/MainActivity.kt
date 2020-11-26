@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 }
                 model.VIEW_PROGRESS_ING -> {
                     try {
-                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.ocrIndex, 0)
+                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.ocrIndex)
                         msgToService.replyTo = mActivityMessenger
                         mServiceMessenger!!.send(msgToService)
                     } catch (e: RemoteException) {
@@ -79,9 +79,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     views.mEditOCRProgress.setText(model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                     Log.i("띠띠에스", model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                 }
+
+                //###############################################################################################
                 model.VIEW_TRANS_DONE -> {
                     try {
                         msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_DONE, model.ocrIndex)
+                        Log.i("MSG", "service ocr index send: ${model.ocrIndex}")
                         msgToService.replyTo = mActivityMessenger
                         mServiceMessenger!!.send(msgToService)
                     } catch (e: RemoteException) {
@@ -428,7 +431,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 // OCR translate
                 var pickedNumber: Int
                 val thread: OCR
-                val proj = arrayOf(MediaStore.Images.Media.RELATIVE_PATH, "_data")
 
                 // picked image list allocate
                 model.allocClipData(requestCode, data, mainActivity)
@@ -440,10 +442,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 if (myDBOpenHelper!!.isNewTitle(model.title)) {
                     model.isPageUpdated = false
                     Toast.makeText(applicationContext, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
-                } else if (model.page < pickedNumber) {
+                }
+                else if (model.page < pickedNumber) {
                     model.isPageUpdated = false
                     Toast.makeText(applicationContext, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
-                } else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
+                }
+                else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
                 if (pickedNumber > 0) {
                     model.threadIndex++ //생성한 스레드 수
                     model.totalPageNum = pickedNumber - model.page
@@ -480,55 +484,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         //갤러리 이미지 변환
     }
 
-    /*   private inner class OCR  // 초기화 작업
-           : Thread() {
-           @Synchronized
-           override fun run() {
-               var image: Bitmap? = null //갤러리에서 이미지 받아와
-               var transResult: String?
-               val strBuilder = StringBuilder()
-               var urione: Uri?
-
-               strBuilder.append(model.ocrResult)
-               if (model.page < model.clipData!!.itemCount) {
-                   model.ocrIndex = 0
-                   val intent = Intent(mainActivity, TransService::class.java)
-                   intent.putExtra("pageNum", model.totalPageNum)
-                   model.mIsBound = bindService(intent, mConnection, BIND_AUTO_CREATE)
-               }
-               Log.i("OCR", model.threadIndex.toString() + "번째 스레드의 run")
-               while (model.page < model.clipData!!.itemCount) {
-                   try {
-                       urione = model.clipData!!.getItemAt(model.page).uri
-                       image = MediaStore.Images.Media.getBitmap(contentResolver, urione)
-                   } catch (e: IOException) {
-                       e.printStackTrace()
-                   }
-                   model.sTess!!.setImage(image)
-                   model.ocrIndex++
-                   model.page++
-                   Log.i("OCR", "getUTF8Text가 OCR변환 끝나고 값 받을 때 까지 기다림. 그냥 변환 중이란 얘기")
-                   transResult = model.sTess!!.utF8Text
-                   strBuilder.append(transResult)
-                   model.bigText.addSentence(transResult)
-                   if (model.ocrIndex < model.totalPageNum)
-                       mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_MAIN_PROGRESS, 0)) //변환 과정
-                   else
-                       mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_TRANS_DONE, 0)) //변환 끝
-                   model.ocrResult = strBuilder.toString()
-                   mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET, 0)) //결과 화면 set
-                   if (model.state == "playing") mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READ_HIGHLIGHT, 0)) //읽는 중일 시 강조
-               }
-               Log.i("OCR", "스레드 끝남")
-               val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
-               if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                   vibrator.vibrate(createOneShot(2000, 150))
-               else
-                   vibrator.vibrate(500)
-               terminateService()
-           }
-       }
-   */
     private fun setBookTable() {
         if (!model.isPageUpdated) model.isPageUpdated = true
         model.titleLastPage = """
@@ -590,6 +545,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     private fun terminateService() {
         if (model.mIsBound) {
             val msg = Message.obtain(null, TransService.DISCONNECT, 0)
+
+            Log.i("DB", "now service will terminate")
             try {
                 mServiceMessenger!!.send(msg)
             } catch (e: RemoteException) {

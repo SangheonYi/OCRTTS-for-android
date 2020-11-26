@@ -63,6 +63,7 @@ class TransService : Service() {
                 VIEW_NOTIFI_PROGRESS -> {
                     builder!!.setProgress(totalPageNum, msg.arg1, false)
                             .setContentText(msg.arg1.toString() + " / " + totalPageNum)
+                    Log.i("MSG", "service msg arg1 receive: ${msg.arg1}")
                     notifiManagerCompat!!.notify(notificationId, builder!!.build())
                     Log.i("serviceHandler", "VIEW_NOTIFI_PROGRESS: " + totalPageNum + "장 중 " + msg.arg1 + "장 변환")
                 }

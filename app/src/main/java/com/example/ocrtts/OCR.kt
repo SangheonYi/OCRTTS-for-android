@@ -49,13 +49,13 @@ class OCR(inModel: MyModel, inMain: MainActivity)  // 초기화 작업
             model.bigText.addSentence(transResult)
             if (model.ocrIndex < model.totalPageNum)
                 main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_PROGRESS_ING, 0)) //변환 과정
-            else
-                main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_TRANS_DONE, 0)) //변환 끝
             model.ocrResult = strBuilder.toString()
             main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_RESULT_SET, 0)) //결과 화면 set
             if (model.state == "playing") main.mHandler.sendMessage(
                     Message.obtain(main.mHandler, model.VIEW_READ_HIGHLIGHT, 0)) //읽는 중일 시 강조
         }
+        main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_TRANS_DONE, 0)) //변환 끝
+        main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_RESULT_SET, 0)) //결과 화면 set
         Log.i("OCR", "스레드 끝남")
         vibrator = main.getSystemService(AppCompatActivity.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)

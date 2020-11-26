@@ -77,10 +77,10 @@ class MyModel internal constructor() {
             curs = main.contentResolver.query(uriList[0],
                     arrayOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME),
                     null, null, null)
-            if (curs != null) {
-                curs.moveToNext()
+            /*if (curs!!.moveToNext()) {
+                Log.i("title: ", curs.getString(0))
                 title = curs.getString(0)
-            }
+            }*/
         }
     }
 
