@@ -42,6 +42,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     inner class MainHandler : Handler() {
         override fun handleMessage(msg: Message) {
             val msgToService: Message
+
             when (msg.what) {
                 model.VIEW_RESULT_SET -> views.mEditOcrResult.setText(model.ocrResult)
                 model.VIEW_READING_STATE -> {
@@ -94,6 +95,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     views.mEditOCRProgress.setText(model.totalPageNum.toString() + "장 Done")
                     views.mEditOcrResult.append(" ")
                     Log.i("띠띠에스", model.ocrIndex.toString() + "끝?")
+                    model.uriList.clear()
                     model.ocrIndex = -1
                 }
                 model.VIEW_BUTTON_IMG -> {
