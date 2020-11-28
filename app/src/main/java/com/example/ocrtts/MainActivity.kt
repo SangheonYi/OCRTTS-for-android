@@ -211,6 +211,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                                 which++
                                 Log.i("fab", "$isChekced <-isChekced  which- > $which")
                                 val cursor = myDBOpenHelper!!.sortColumn("title")
+
                                 cursor.move(which)
                                 if (isChekced) {
                                     if (myDBOpenHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 1))
@@ -385,15 +386,13 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         val pickedFolder = ArrayList<String>()
         val checkBool: BooleanArray
 
-        if (cursor != null) {
-            while (cursor.moveToNext()) {
-                if (!folderList.contains(cursor.getString(0))) {
-                    Log.i("앨범", "0 index: " + cursor.getString(0))
-                    folderList.add(cursor.getString(0))
-                }
+        while (cursor!!.moveToNext()) {
+            if (!folderList.contains(cursor.getString(0))) {
+                Log.i("앨범", "0 index: " + cursor.getString(0))
+                folderList.add(cursor.getString(0))
             }
-            cursor.close()
         }
+        cursor.close()
         Log.i("fab", "클릭 fab_write_txt")
         //대화상자 설정
         checkBool = BooleanArray(folderList.size) { false }
@@ -435,7 +434,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             if (requestCode == model.PICTURE_REQUEST_CODE ||
                     requestCode == model.FOLDER_REQUEST_CODE) {
                 // OCR translate
-                var pickedNumber: Int
                 val thread: OCR
 
                 // picked image list allocate
@@ -444,24 +442,24 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 // TODO 폴더 단위 변환이면 OCR에서 매 폴더마다 체크해주자.
                 model.page = myDBOpenHelper!!.getContinuePage(model.title)
                 Log.i("DB", "선택한 폴더(책 제목) : " + model.title)
-                pickedNumber = model.uriList.size
+                model.pickedNumber = model.uriList.size
                 if (myDBOpenHelper!!.isNewTitle(model.title)) {
                     model.isPageUpdated = false
                     Toast.makeText(applicationContext, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
                 }
-                else if (model.page < pickedNumber) {
+                else if (model.page < model.pickedNumber) {
                     model.isPageUpdated = false
                     Toast.makeText(applicationContext, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
                 }
                 else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
-                if (pickedNumber > 0) {
+                if (model.pickedNumber > 0) {
                     model.threadIndex++ //생성한 스레드 수
-                    model.totalPageNum = pickedNumber - model.page
+                    model.totalPageNum = model.pickedNumber - model.page
                     thread = OCR(model, mainActivity) // OCR 진행할 스레드
                     thread.isDaemon = true
                     thread.start()
                     terminateService()
-                } else Log.i("DB", "pickedNumber가 0임")
+                } else Log.i("DB", "model.pickedNumber가 0임")
             } else if (requestCode == model.CREATE_REQUEST_CODE ||
                     requestCode == model.EDIT_REQUEST_CODE) {
                 if (data != null) {

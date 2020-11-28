@@ -50,6 +50,7 @@ class MyModel internal constructor() {
     var title = "no title"
     var page = 0
     var titleLastPage = "$title\nPage: $page"
+    var pickedNumber = 0
     var isPageUpdated = false
     val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
 
@@ -61,7 +62,8 @@ class MyModel internal constructor() {
 
         when(requestCode) {
             PICTURE_REQUEST_CODE -> {
-                if (data!!.data != null) {
+                if (data != null)
+                if (data.data != null) {
                     // 이미지 한 장만 선택했을 때
                     uriList.add(data.data!!)
                     Log.i("DB", "clipData : " + uriList)
@@ -77,10 +79,11 @@ class MyModel internal constructor() {
             curs = main.contentResolver.query(uriList[0],
                     arrayOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME),
                     null, null, null)
-            /*if (curs!!.moveToNext()) {
+            if (curs!!.moveToNext()) {
                 Log.i("title: ", curs.getString(0))
                 title = curs.getString(0)
-            }*/
+            }
+            curs.close()
         }
     }
 
