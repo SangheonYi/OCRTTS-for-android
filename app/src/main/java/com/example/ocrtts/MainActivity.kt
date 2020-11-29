@@ -42,6 +42,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     inner class MainHandler : Handler() {
         override fun handleMessage(msg: Message) {
             val msgToService: Message
+            val folder = model.folderMetaList.first()
 
             when (msg.what) {
                 model.VIEW_RESULT_SET -> views.mEditOcrResult.setText(model.ocrResult)
@@ -78,8 +79,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     } catch (e: RemoteException) {
                         e.printStackTrace()
                     }
-                    views.mEditOCRProgress.setText(model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
-                    Log.i("VIEW_PROGRESS_ING", model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
+                    views.mEditOCRProgress.setText("${model.sumTotalPage()} 장 중 ${model.ocrIndex} 장 변환")
+                    Log.i("VIEW_PROGRESS_ING", folder.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                 }
                 model.VIEW_TRANS_DONE -> {
                     try {
@@ -90,10 +91,10 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     } catch (e: RemoteException) {
                         e.printStackTrace()
                     }
-                    views.mEditOCRProgress.setText(model.totalPageNum.toString() + "장 Done")
+                    views.mEditOCRProgress.setText(model.sumTotalPage().toString() + "장 Done")
                     views.mEditOcrResult.append(" ")
                     Log.i("띠띠에스", model.ocrIndex.toString() + "끝?")
-                    model.uriList.clear()
+                    folder.uriList.clear()
                     model.ocrIndex = -1
                 }
                 model.VIEW_BUTTON_IMG -> {
@@ -383,6 +384,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         val folderList = ArrayList<String>()
         val pickedFolder = ArrayList<String>()
         val checkBool: BooleanArray
+        var folderIndex = 0
+        var folder = model.folderMetaList.first()
 
         while (cursor!!.moveToNext()) {
             if (!folderList.contains(cursor.getString(0))) {
@@ -406,16 +409,20 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     Log.i("folder pick", which.toString())
                     for (e in pickedFolder) {
                         //선택한 폴더들의 이미지들 Uri 획득하기
-                        projection = arrayOf(MediaStore.Images.ImageColumns._ID, MediaStore.Images.ImageColumns.RELATIVE_PATH)
+                        projection = arrayOf(MediaStore.Images.ImageColumns._ID, MediaStore.Images.ImageColumns.DISPLAY_NAME)
                         cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                                 projection,
                                 MediaStore.Images.ImageColumns.RELATIVE_PATH + " = ?"
                                 , arrayOf(e), model.sortOrder)
                         Log.i("folder pick", "colname " + cursor!!.columnNames.contentToString())
                         while (cursor!!.moveToNext()){
-                            Log.i("folder pick", "add: ${cursor!!.getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.RELATIVE_PATH))}")
-                            model.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(0)))
+                            Log.i("folder pick", "add: ${cursor!!.
+                            getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.RELATIVE_PATH))}")
+                            folder.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.
+                            getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID))))
                         }
+                        model.folderMetaList.add(FolderMeta())
+                        folder = model.folderMetaList.last()
                     }
                     onActivityResult(model.FOLDER_REQUEST_CODE, RESULT_OK, Intent())
                 }
@@ -430,35 +437,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         if (resultCode == RESULT_OK) {
             Log.i("onActivityResult", "requestCode: $requestCode")
             if (requestCode == model.PICTURE_REQUEST_CODE ||
-                    requestCode == model.FOLDER_REQUEST_CODE) {
-                // OCR translate
-                val thread: OCR
-
-                // picked image list allocate
-                model.allocClipData(requestCode, data, mainActivity)
-                // image meta data parsing
-                // TODO 폴더 단위 변환이면 OCR에서 매 폴더마다 체크해주자.
-                model.page = myDBOpenHelper!!.getContinuePage(model.title)
-                Log.i("DB", "선택한 폴더(책 제목) : " + model.title)
-                model.pickedNumber = model.uriList.size
-                if (myDBOpenHelper!!.isNewTitle(model.title)) {
-                    model.isPageUpdated = false
-                    Toast.makeText(applicationContext, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
-                }
-                else if (model.page < model.pickedNumber) {
-                    model.isPageUpdated = false
-                    Toast.makeText(applicationContext, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
-                }
-                else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
-                if (model.pickedNumber > 0) {
-                    model.threadIndex++ //생성한 스레드 수
-                    model.totalPageNum = model.pickedNumber - model.page
-                    thread = OCR(model, mainActivity) // OCR 진행할 스레드
-                    thread.isDaemon = true
-                    thread.start()
-                    terminateService()
-                } else Log.i("DB", "model.pickedNumber가 0임")
-            } else if (requestCode == model.CREATE_REQUEST_CODE ||
+                    requestCode == model.FOLDER_REQUEST_CODE) runOCR(requestCode, data)
+            else if (requestCode == model.CREATE_REQUEST_CODE ||
                     requestCode == model.EDIT_REQUEST_CODE) {
                 if (data != null) {
                     var pathStr = ""
@@ -486,19 +466,54 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         //갤러리 이미지 변환
     }
 
+    private fun runOCR(requestCode: Int, data: Intent?) {
+        // OCR translate
+        val thread: OCR
+        val folder = model.folderMetaList.first()
+
+        // picked image list allocate
+        model.allocClipData(requestCode, data, mainActivity)
+        // image meta data parsing
+        // TODO 폴더 단위 변환이면 OCR에서 매 폴더마다 체크해주자.
+        folder.page = myDBOpenHelper!!.getContinuePage(model.title)
+        Log.i("DB", "선택한 폴더(책 제목) : " + model.title)
+        folder.pickedNumber = folder.uriList.size
+        if (myDBOpenHelper!!.isNewTitle(model.title)) {
+            folder.isPageUpdated = false
+            Toast.makeText(applicationContext, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
+        }
+        else if (folder.page < folder.pickedNumber) {
+            folder.isPageUpdated = false
+            Toast.makeText(applicationContext, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
+        }
+        else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
+        if (folder.pickedNumber > 0) {
+            model.threadIndex++ //생성한 스레드 수
+            folder.totalPageNum = folder.pickedNumber - folder.page
+            thread = OCR(model, mainActivity) // OCR 진행할 스레드
+            thread.isDaemon = true
+            thread.start()
+            terminateService()
+        } else Log.i("DB", "model.pickedNumber가 0임")
+    }
+
     private fun setBookTable() {
-        if (!model.isPageUpdated) model.isPageUpdated = true
-        model.titleLastPage = """
+        val folder = model.folderMetaList.first()
+
+        if (!folder.isPageUpdated) folder.isPageUpdated = true
+        folder.titleLastPage = """
                ${model.title}
-               Page: ${model.page}
+               Page: ${folder.page}
                """.trimIndent()
         myDBOpenHelper!!.open()
         if (model.threadIndex > 0 && myDBOpenHelper!!.isNewTitle(model.title)) {
-            if (myDBOpenHelper!!.insertColumn(model.title, model.page.toLong(), model.titleLastPage, 0) != -1L)
-                Log.i("DB", "DB에 삽입됨 : " + model.title + "  " + model.page) else Log.i("DB", "DB에 삽입 에러 -1 : " + model.title + "  " + model.page)
+            if (myDBOpenHelper!!.insertColumn(model.title, folder.page.toLong(), folder.titleLastPage, 0) != -1L)
+                Log.i("DB", "DB에 삽입됨 : " + model.title + "  " + folder.page)
+            else Log.i("DB", "DB에 삽입 에러 -1 : " + model.title + "  " + folder.page)
         } else if (model.threadIndex > 0 && !myDBOpenHelper!!.isNewTitle(model.title)) {
-            if (myDBOpenHelper!!.updateColumn(myDBOpenHelper!!.getIdByTitle(model.title), model.title, model.page.toLong(), model.titleLastPage, 0))
-                Log.i("DB", "DB 갱신 됨 : " + model.title + "  " + model.page) else Log.i("DB", "DB 갱신 실패 updateColumn <= 0 : " + model.title + "  " + model.page)
+            if (myDBOpenHelper!!.updateColumn(myDBOpenHelper!!.getIdByTitle(model.title), model.title, folder.page.toLong(), folder.titleLastPage, 0))
+                Log.i("DB", "DB 갱신 됨 : " + model.title + "  " + folder.page)
+            else Log.i("DB", "DB 갱신 실패 updateColumn <= 0 : " + model.title + "  " + folder.page)
         }
     }
 

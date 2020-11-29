@@ -30,9 +30,6 @@ class MyModel internal constructor() {
     var lang = "kor"//can
     var ocrIndex = -1 //OCR 진행 중인 이미지 번호
     var threadIndex = 0 //thread 시행횟수
-    var totalPageNum = 0
-//    var clipData: ClipData? = null
-    var uriList = ArrayList<Uri>()
 
     //Text, TTS
     var ocrResult = " " //OCR 결과값 받음
@@ -46,12 +43,8 @@ class MyModel internal constructor() {
     //Data
     var frw = SAFRW()
     var safUri: Uri? = null
-
     var title = "no title"
-    var page = 0
-    var titleLastPage = "$title\nPage: $page"
-    var pickedNumber = 0
-    var isPageUpdated = false
+    val folderMetaList = arrayListOf<FolderMeta>()
     val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
 
     //Service
@@ -59,25 +52,26 @@ class MyModel internal constructor() {
 
     fun allocClipData(requestCode: Int, data: Intent?, main: MainActivity) {
         val curs: Cursor?
+        val folder = folderMetaList.first()
 
         when(requestCode) {
             PICTURE_REQUEST_CODE -> {
                 if (data != null) {
                     if (data.data != null) {
                         // 이미지 한 장만 선택했을 때
-                        uriList.add(data.data!!)
-                        Log.i("DB", "clipData : " + uriList)
+                        folder.uriList.add(data.data!!)
+                        Log.i("DB", "clipData : " + folder.uriList)
                     } else if (data.clipData != null)
                         for (i in 0 until data.clipData!!.itemCount)
-                            uriList.add(data.clipData!!.getItemAt(i).uri)
+                            folder.uriList.add(data.clipData!!.getItemAt(i).uri)
                 }
             }
             FOLDER_REQUEST_CODE -> {
                 Log.i("DB", "FOLDER_REQUEST_CODE")
             }
         }
-        if (uriList.isNotEmpty()) {
-            curs = main.contentResolver.query(uriList[0],
+        if (folder.uriList.isNotEmpty()) {
+            curs = main.contentResolver.query(folder.uriList[0],
                     arrayOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME),
                     null, null, null)
             if (curs!!.moveToNext()) {
@@ -88,7 +82,10 @@ class MyModel internal constructor() {
         }
     }
 
-    fun imageMetaCheck() {
+    fun sumTotalPage(): Int {
+        var sum = 0
 
+        for (e in folderMetaList) sum += e.totalPageNum
+        return sum
     }
 }
