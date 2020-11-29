@@ -62,14 +62,15 @@ class MyModel internal constructor() {
 
         when(requestCode) {
             PICTURE_REQUEST_CODE -> {
-                if (data != null)
-                if (data.data != null) {
-                    // 이미지 한 장만 선택했을 때
-                    uriList.add(data.data!!)
-                    Log.i("DB", "clipData : " + uriList)
-                } else if (data.clipData != null)
-                    for (i in 0 until data.clipData!!.itemCount)
-                        uriList.add(data.clipData!!.getItemAt(i).uri)
+                if (data != null) {
+                    if (data.data != null) {
+                        // 이미지 한 장만 선택했을 때
+                        uriList.add(data.data!!)
+                        Log.i("DB", "clipData : " + uriList)
+                    } else if (data.clipData != null)
+                        for (i in 0 until data.clipData!!.itemCount)
+                            uriList.add(data.clipData!!.getItemAt(i).uri)
+                }
             }
             FOLDER_REQUEST_CODE -> {
                 Log.i("DB", "FOLDER_REQUEST_CODE")

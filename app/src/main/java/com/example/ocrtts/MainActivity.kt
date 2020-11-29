@@ -81,8 +81,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     views.mEditOCRProgress.setText(model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                     Log.i("VIEW_PROGRESS_ING", model.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
                 }
-
-                //###############################################################################################
                 model.VIEW_TRANS_DONE -> {
                     try {
                         msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_DONE, model.ocrIndex)
