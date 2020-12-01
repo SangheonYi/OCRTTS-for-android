@@ -12,10 +12,11 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import java.io.IOException
 
-class OCR(inModel: MyModel, inMain: MainActivity)  // 초기화 작업
+class OCR(inMain: MainActivity)  // 초기화 작업
     : Thread() {
-    private var model: MyModel = inModel
     private var main: MainActivity = inMain
+    private val model = main.model
+    private val mHandler = main.mHandler
     private val strBuilder = StringBuilder()
     private var transResult: String? = null
     private var urione: Uri? = null
@@ -25,43 +26,52 @@ class OCR(inModel: MyModel, inMain: MainActivity)  // 초기화 작업
 
     @Synchronized
     override fun run() {
+        while (model.folderMetaList.isNotEmpty()) {
+            ocrTrans()
+            model.folderMetaList.removeFirst()
+        }
+        mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_TRANS_DONE)) //변환 끝
+        mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET)) //결과 화면 set
+        Log.i("OCR", "picked folder number : " + model.folderMetaList.size)
+        model.ocrIndex = -1
+        main.terminateService()
+    }
+
+    private fun ocrTrans() {
+        val folder = model.folderMetaList.first()
+
         strBuilder.append(model.ocrResult)
-        if (model.page < model.uriList.size) {
-            model.ocrIndex = 0
-            intent = Intent(main, TransService::class.java)
-            intent.putExtra("pageNum", model.totalPageNum)
+        if (folder.page < folder.uriList.size) {
+//            model.ocrIndex = 0
+            intent = Intent(main, TransService::class.java).putExtra("pageNum", folder.folderTotalPages)
             model.mIsBound = main.bindService(intent, main.mConnection, AppCompatActivity.BIND_AUTO_CREATE)
         }
         Log.i("OCR", model.threadIndex.toString() + "번째 스레드의 run")
-        while (model.page < model.uriList.size) {
+        while (folder.page < folder.uriList.size) {
             try {
-                urione = model.uriList[model.page]
+                urione = folder.uriList[folder.page]
                 image = MediaStore.Images.Media.getBitmap(main.contentResolver, urione)
             } catch (e: IOException) {
                 e.printStackTrace()
             }
             model.sTess!!.setImage(image)
             model.ocrIndex++
-            model.page++
+            folder.page++
             Log.i("OCR", "getUTF8Text가 OCR변환 끝나고 값 받을 때 까지 기다림. 그냥 변환 중이란 얘기")
             transResult = model.sTess!!.utF8Text
             strBuilder.append(transResult)
             model.bigText.addSentence(transResult)
             Log.i("MSG", "OCR main send")
-            if (model.ocrIndex < model.totalPageNum)
+            if (model.ocrIndex < folder.folderTotalPages)
                 main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_PROGRESS_ING)) //변환 과정
             model.ocrResult = strBuilder.toString()
             main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_RESULT_SET)) //결과 화면 set
-            if (model.state == "playing") main.mHandler.sendMessage(
-                    Message.obtain(main.mHandler, model.VIEW_READ_HIGHLIGHT)) //읽는 중일 시 강조
+            if (model.state == "playing") main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_READ_HIGHLIGHT)) //읽는 중일 시 강조
         }
-        main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_TRANS_DONE)) //변환 끝
-        main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_RESULT_SET)) //결과 화면 set
         Log.i("OCR", "스레드 끝남")
         vibrator = main.getSystemService(AppCompatActivity.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             vibrator.vibrate(VibrationEffect.createOneShot(2000, 150))
-        else
-            vibrator.vibrate(500)
+        else vibrator.vibrate(500)
     }
 }

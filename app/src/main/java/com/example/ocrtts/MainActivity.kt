@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     var views: MyView = MyView()
 
     //Control
-    private var myDBOpenHelper: MyDatabaseOpenHelper? = null
+    var myDBOpenHelper: MyDatabaseOpenHelper? = null
     var mHandler = MainHandler()
     var mServiceMessenger: Messenger? = null
     var mActivityMessenger: Messenger? = null
@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     inner class MainHandler : Handler() {
         override fun handleMessage(msg: Message) {
             val msgToService: Message
-            val folder = model.folderMetaList.first()
+            val folder: FolderMeta
 
             when (msg.what) {
                 model.VIEW_RESULT_SET -> views.mEditOcrResult.setText(model.ocrResult)
@@ -70,37 +70,42 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
                     Log.i("띠띠에스", "리셋")
                 }
-                model.VIEW_PROGRESS_ING -> {
-                    Log.i("MSG", "OCR service send")
-                    try {
-                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.ocrIndex)
-                        msgToService.replyTo = mActivityMessenger
-                        mServiceMessenger!!.send(msgToService)
-                    } catch (e: RemoteException) {
-                        e.printStackTrace()
-                    }
-                    views.mEditOCRProgress.setText("${model.sumTotalPage()} 장 중 ${model.ocrIndex} 장 변환")
-                    Log.i("VIEW_PROGRESS_ING", folder.totalPageNum.toString() + "장 중 " + model.ocrIndex + "장 변환")
-                }
-                model.VIEW_TRANS_DONE -> {
-                    try {
-                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_DONE, model.ocrIndex)
-                        Log.i("MSG", "service ocr index send: ${model.ocrIndex}")
-                        msgToService.replyTo = mActivityMessenger
-                        mServiceMessenger!!.send(msgToService)
-                    } catch (e: RemoteException) {
-                        e.printStackTrace()
-                    }
-                    views.mEditOCRProgress.setText(model.sumTotalPage().toString() + "장 Done")
-                    views.mEditOcrResult.append(" ")
-                    Log.i("띠띠에스", model.ocrIndex.toString() + "끝?")
-                    folder.uriList.clear()
-                    model.ocrIndex = -1
-                }
                 model.VIEW_BUTTON_IMG -> {
                     Log.i("띠띠에스", "재생 or 일시정지 State : " + model.state + " isSpeaking : " + mTts.isSpeaking)
                     if (model.state == "playing" && mTts.isSpeaking) views.mPlayButton.setImageResource(R.drawable.pause_states)
                     else views.mPlayButton.setImageResource(R.drawable.play_states)
+                }
+            }
+            if (model.folderMetaList.isNotEmpty() && msg.what > 3) {
+                folder = model.folderMetaList.first()
+                when (msg.what) {
+                    model.VIEW_PROGRESS_ING -> {
+                        Log.i("MSG", "OCR service send")
+                        try {
+                            msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.ocrIndex)
+                            msgToService.replyTo = mActivityMessenger
+                            mServiceMessenger!!.send(msgToService)
+                        } catch (e: RemoteException) {
+                            e.printStackTrace()
+                        }
+                        views.mEditOCRProgress.setText("${model.sumTotalPage()} 장 중 ${model.ocrIndex} 장 변환")
+                        Log.i("VIEW_PROGRESS_ING", folder.folderTotalPages.toString() + "장 중 " + model.ocrIndex + "장 변환")
+                    }
+                    model.VIEW_TRANS_DONE -> {
+                        try {
+                            msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_DONE, model.ocrIndex)
+                            Log.i("MSG", "service ocr index send: ${model.ocrIndex}")
+                            msgToService.replyTo = mActivityMessenger
+                            mServiceMessenger!!.send(msgToService)
+                        } catch (e: RemoteException) {
+                            e.printStackTrace()
+                        }
+                        views.mEditOCRProgress.setText(model.sumTotalPage().toString() + "장 Done")
+                        views.mEditOcrResult.append(" ")
+                        Log.i("띠띠에스", model.ocrIndex.toString() + "끝?")
+                        folder.uriList.clear()
+                    }
+
                 }
             }
         }
@@ -183,7 +188,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                                 when (checkedOption) {
                                     0 -> {
                                         Log.i("frw", "저장 case 0 파일생성")
-                                        intent = model.frw.createFile(model.MIME_TEXT, model.title)
+                                        intent = if (model.folderMetaList.isNotEmpty()) model.frw.createFile(model.MIME_TEXT, model.folderMetaList.first().title)
+                                        else model.frw.createFile(model.MIME_TEXT, "no title")
                                         startActivityForResult(intent, model.CREATE_REQUEST_CODE)
                                     }
                                     1 -> {
@@ -384,8 +390,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         val folderList = ArrayList<String>()
         val pickedFolder = ArrayList<String>()
         val checkBool: BooleanArray
-        var folderIndex = 0
-        var folder = model.folderMetaList.first()
+        var folder: FolderMeta? = null
 
         while (cursor!!.moveToNext()) {
             if (!folderList.contains(cursor.getString(0))) {
@@ -398,33 +403,30 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         //대화상자 설정
         checkBool = BooleanArray(folderList.size) { false }
         views.folderMADB.setTitle("폴더 단위로 변환")
-                .setMultiChoiceItems(folderList.toTypedArray(), checkBool)
-                { dialog, which, isChecked ->
-                    if (isChecked && !pickedFolder.contains(folderList[which])) {
-                        Log.i("folder pick", folderList[which])
-                        pickedFolder.add(folderList[which])
-                    }
+                .setMultiChoiceItems(folderList.toTypedArray(), checkBool) { dialog, which, isChecked ->
+                    if (isChecked && !pickedFolder.contains(folderList[which])) pickedFolder.add(folderList[which])
                 }
                 .setPositiveButton("Ok") { dialog, which ->
                     Log.i("folder pick", which.toString())
                     for (e in pickedFolder) {
                         //선택한 폴더들의 이미지들 Uri 획득하기
-                        projection = arrayOf(MediaStore.Images.ImageColumns._ID, MediaStore.Images.ImageColumns.DISPLAY_NAME)
-                        cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                projection,
-                                MediaStore.Images.ImageColumns.RELATIVE_PATH + " = ?"
-                                , arrayOf(e), model.sortOrder)
-                        Log.i("folder pick", "colname " + cursor!!.columnNames.contentToString())
-                        while (cursor!!.moveToNext()){
-                            Log.i("folder pick", "add: ${cursor!!.
-                            getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.RELATIVE_PATH))}")
-                            folder.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.
-                            getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID))))
-                        }
                         model.folderMetaList.add(FolderMeta())
                         folder = model.folderMetaList.last()
+                        projection = arrayOf(MediaStore.Images.ImageColumns._ID, MediaStore.Images.ImageColumns.RELATIVE_PATH)
+                        cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                projection, MediaStore.Images.ImageColumns.RELATIVE_PATH + " = ?", arrayOf(e), model.sortOrder)
+                        Log.i("folder pick", "colname " + cursor!!.columnNames.contentToString())
+                        while (cursor!!.moveToNext()) {
+                            Log.i("folder pick", "add: ${
+                                cursor!!.getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.RELATIVE_PATH))}")
+                            folder!!.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID))))
+                            Log.i("folder pick", "uri add: ${
+                                ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID)))}")
+                        }
+                        Log.i("folder pick", "list size: ${folder!!.uriList.size}")
                     }
-                    onActivityResult(model.FOLDER_REQUEST_CODE, RESULT_OK, Intent())
+//                    onActivityResult(model.FOLDER_REQUEST_CODE, RESULT_OK, Intent())
+                    model.runOCR(model.FOLDER_REQUEST_CODE, null, mainActivity)
                 }
                 .show()
     }
@@ -437,8 +439,9 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         if (resultCode == RESULT_OK) {
             Log.i("onActivityResult", "requestCode: $requestCode")
             if (requestCode == model.PICTURE_REQUEST_CODE ||
-                    requestCode == model.FOLDER_REQUEST_CODE) runOCR(requestCode, data)
-            else if (requestCode == model.CREATE_REQUEST_CODE ||
+                    requestCode == model.FOLDER_REQUEST_CODE) {
+                model.runOCR(requestCode, data, mainActivity)
+            } else if (requestCode == model.CREATE_REQUEST_CODE ||
                     requestCode == model.EDIT_REQUEST_CODE) {
                 if (data != null) {
                     var pathStr = ""
@@ -463,8 +466,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 } else Log.i("onActivityResult", "data가 null")
             }
         }
-        //갤러리 이미지 변환
     }
+/*
 
     private fun runOCR(requestCode: Int, data: Intent?) {
         // OCR translate
@@ -496,34 +499,29 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             terminateService()
         } else Log.i("DB", "model.pickedNumber가 0임")
     }
+*/
 
     private fun setBookTable() {
-        val folder = model.folderMetaList.first()
+        val folder: FolderMeta
 
-        if (!folder.isPageUpdated) folder.isPageUpdated = true
-        folder.titleLastPage = """
-               ${model.title}
+        if (model.folderMetaList.isNotEmpty()) {
+            folder = model.folderMetaList.first()
+            if (!folder.isPageUpdated) folder.isPageUpdated = true
+            folder.titleLastPage = """
+               ${folder.title}
                Page: ${folder.page}
                """.trimIndent()
-        myDBOpenHelper!!.open()
-        if (model.threadIndex > 0 && myDBOpenHelper!!.isNewTitle(model.title)) {
-            if (myDBOpenHelper!!.insertColumn(model.title, folder.page.toLong(), folder.titleLastPage, 0) != -1L)
-                Log.i("DB", "DB에 삽입됨 : " + model.title + "  " + folder.page)
-            else Log.i("DB", "DB에 삽입 에러 -1 : " + model.title + "  " + folder.page)
-        } else if (model.threadIndex > 0 && !myDBOpenHelper!!.isNewTitle(model.title)) {
-            if (myDBOpenHelper!!.updateColumn(myDBOpenHelper!!.getIdByTitle(model.title), model.title, folder.page.toLong(), folder.titleLastPage, 0))
-                Log.i("DB", "DB 갱신 됨 : " + model.title + "  " + folder.page)
-            else Log.i("DB", "DB 갱신 실패 updateColumn <= 0 : " + model.title + "  " + folder.page)
+            myDBOpenHelper!!.open()
+            if (model.threadIndex > 0 && myDBOpenHelper!!.isNewTitle(folder.title)) {
+                if (myDBOpenHelper!!.insertColumn(folder.title, folder.page.toLong(), folder.titleLastPage, 0) != -1L)
+                    Log.i("DB", "DB에 삽입됨 : " + folder.title + "  " + folder.page)
+                else Log.i("DB", "DB에 삽입 에러 -1 : " + folder.title + "  " + folder.page)
+            } else if (model.threadIndex > 0 && !myDBOpenHelper!!.isNewTitle(folder.title)) {
+                if (myDBOpenHelper!!.updateColumn(myDBOpenHelper!!.getIdByTitle(folder.title), folder.title, folder.page.toLong(), folder.titleLastPage, 0))
+                    Log.i("DB", "DB 갱신 됨 : " + folder.title + "  " + folder.page)
+                else Log.i("DB", "DB 갱신 실패 updateColumn <= 0 : " + folder.title + "  " + folder.page)
+            }
         }
-    }
-
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            val result = mTts.setLanguage(Locale.KOREAN)
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED)
-                Log.e(model.TAG, "TextToSpeech 초기화 에러!")
-            else views.mPlayButton.isEnabled = true
-        } else Log.e(model.TAG, "TextToSpeech 초기화 에러!")
     }
 
     private fun checkFile(dir: File): Boolean {
@@ -559,7 +557,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         }
     }
 
-    private fun terminateService() {
+    fun terminateService() {
         Log.i("Service", "terminateService called is bound? ${model.mIsBound}")
         if (model.mIsBound) {
             val msg = Message.obtain(null, TransService.DISCONNECT, 0)
@@ -573,6 +571,15 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             unbindService(mConnection)
             model.mIsBound = false
         }
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            val result = mTts.setLanguage(Locale.KOREAN)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED)
+                Log.e(model.TAG, "TextToSpeech 초기화 에러!")
+            else views.mPlayButton.isEnabled = true
+        } else Log.e(model.TAG, "TextToSpeech 초기화 에러!")
     }
 
     public override fun onDestroy() {

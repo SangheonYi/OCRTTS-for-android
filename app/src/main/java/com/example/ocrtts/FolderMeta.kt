@@ -8,6 +8,6 @@ class FolderMeta {
     var titleLastPage = "$title\nPage: $page"
     var pickedNumber = 0
     var isPageUpdated = false
-    var totalPageNum = 0
+    var folderTotalPages = 0
     var uriList = ArrayList<Uri>()
 }
