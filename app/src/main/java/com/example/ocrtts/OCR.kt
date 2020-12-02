@@ -41,7 +41,7 @@ class OCR(inMain: MainActivity)  // 초기화 작업
         strBuilder.append(model.ocrResult)
         if (folder.page < folder.pickedNumber) {
             model.ocrIndex += folder.page
-            intent = Intent(main, TransService::class.java).putExtra("pageNum", folder.folderTotalPages)
+            intent = Intent(main, TransService::class.java).putExtra("pageNum", model.folderTotalPage)
             model.mIsBound = main.bindService(intent, main.mConnection, AppCompatActivity.BIND_AUTO_CREATE)
         }
         Log.i("OCR", model.threadIndex.toString() + "번째 스레드의 run")

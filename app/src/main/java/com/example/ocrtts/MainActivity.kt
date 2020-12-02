@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 model.VIEW_PROGRESS_ING -> {
                     Log.i("VIEW_PROGRESS_ING", "OCR service send")
                     try {
-                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.folderTotalPage)
+                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.ocrIndex)
                         msgToService.replyTo = mActivityMessenger
                         mServiceMessenger!!.send(msgToService)
                     } catch (e: RemoteException) {
