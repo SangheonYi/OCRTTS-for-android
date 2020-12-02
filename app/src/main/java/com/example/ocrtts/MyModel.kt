@@ -28,8 +28,9 @@ class MyModel internal constructor() {
     var sTess: TessBaseAPI? = null
     var dataPath = "" //can
     var lang = "kor"//can
-    var ocrIndex = -1 //OCR 진행 중인 이미지 번호
+    var ocrIndex = 0 //OCR 진행 중인 이미지 번호
     var threadIndex = 0 //thread 시행횟수
+    var folderTotalPage = 0 //thread 시행횟수
 
     //Text, TTS
     var ocrResult = " " //OCR 결과값 받음
@@ -51,25 +52,20 @@ class MyModel internal constructor() {
     var mIsBound = false
 
     private fun allocClipData(requestCode: Int, data: Intent?, main: MainActivity) {
-        val curs: Cursor?
-        val folder = folderMetaList.first()
 
-        when(requestCode) {
-            PICTURE_REQUEST_CODE -> {
-                if (data != null) {
-                    if (data.data != null) {
-                        // 이미지 한 장만 선택했을 때
-                        folder.uriList.add(data.data!!)
-                        Log.i("DB", "clipData : " + folder.uriList)
-                    } else if (data.clipData != null)
-                        for (i in 0 until data.clipData!!.itemCount)
-                            folder.uriList.add(data.clipData!!.getItemAt(i).uri)
-                }
-            }
-            FOLDER_REQUEST_CODE -> {
-                Log.i("DB", "FOLDER_REQUEST_CODE")
-            }
-        }
+    }
+
+/*    fun sumTotalPage(): Int {
+        var sum = 0
+
+        for (e in folderMetaList) sum += e.folderTotalPages
+        folderTotalPage = sum
+        return sum
+    }*/
+
+    private fun setFolderMeta(folder: FolderMeta, main: MainActivity) {
+        val curs: Cursor?
+
         if (folder.uriList.isNotEmpty()) {
             curs = main.contentResolver.query(folder.uriList[0],
                     arrayOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME),
@@ -80,27 +76,11 @@ class MyModel internal constructor() {
             }
             curs.close()
         }
-    }
-
-    fun sumTotalPage(): Int {
-        var sum = 0
-
-        for (e in folderMetaList) sum += e.folderTotalPages
-        return sum
-    }
-
-    fun runOCR(requestCode: Int, data: Intent?, main: MainActivity) {
-        // OCR translate
-        val thread: OCR
-        val folder = folderMetaList.first()
-
-        // picked image list allocate
-        allocClipData(requestCode, data, main)
-        // image meta data parsing
-        // TODO 폴더 단위 변환이면 OCR에서 매 폴더마다 체크해주자.
         folder.page = main.myDBOpenHelper!!.getContinuePage(folder.title)
         Log.i("runOCR", "선택한 폴더(책 제목) : " + folder.title)
         folder.pickedNumber = folder.uriList.size
+        folder.folderTotalPages += folder.pickedNumber - folder.page
+        folderTotalPage += folder.folderTotalPages
         if (main.myDBOpenHelper!!.isNewTitle(folder.title)) {
             folder.isPageUpdated = false
             Toast.makeText(main, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
@@ -110,13 +90,18 @@ class MyModel internal constructor() {
             Toast.makeText(main, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
         }
         else Toast.makeText(main, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
-        if (folder.pickedNumber > 0) {
-            threadIndex++ //생성한 스레드 수
-            folder.folderTotalPages = folder.pickedNumber - folder.page
-            for (e in folderMetaList) Log.i("OCR", "uriList size : " + e.uriList.size)
-            thread = OCR(main) // OCR 진행할 스레드
-            thread.isDaemon = true
-            thread.start()
-        } else Log.i("DB", "pickedNumber가 0임")
+    }
+
+    fun runOCR(requestCode: Int, data: Intent?, main: MainActivity) {
+        // OCR translate
+        val thread: OCR
+
+        // image meta data parsing
+        // TODO 폴더 단위 변환이면 OCR에서 매 폴더마다 체크해주자.
+        for (f in folderMetaList) setFolderMeta(f, main)
+        threadIndex++ //생성한 스레드 수
+        thread = OCR(main) // OCR 진행할 스레드
+        thread.isDaemon = true
+        thread.start()
     }
 }

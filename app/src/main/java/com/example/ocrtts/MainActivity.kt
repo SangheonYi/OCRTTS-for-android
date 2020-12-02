@@ -42,7 +42,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     inner class MainHandler : Handler() {
         override fun handleMessage(msg: Message) {
             val msgToService: Message
-            val folder: FolderMeta
 
             when (msg.what) {
                 model.VIEW_RESULT_SET -> views.mEditOcrResult.setText(model.ocrResult)
@@ -75,37 +74,33 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     if (model.state == "playing" && mTts.isSpeaking) views.mPlayButton.setImageResource(R.drawable.pause_states)
                     else views.mPlayButton.setImageResource(R.drawable.play_states)
                 }
-            }
-            if (model.folderMetaList.isNotEmpty() && msg.what > 3) {
-                folder = model.folderMetaList.first()
-                when (msg.what) {
-                    model.VIEW_PROGRESS_ING -> {
-                        Log.i("MSG", "OCR service send")
-                        try {
-                            msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.ocrIndex)
-                            msgToService.replyTo = mActivityMessenger
-                            mServiceMessenger!!.send(msgToService)
-                        } catch (e: RemoteException) {
-                            e.printStackTrace()
-                        }
-                        views.mEditOCRProgress.setText("${model.sumTotalPage()} 장 중 ${model.ocrIndex} 장 변환")
-                        Log.i("VIEW_PROGRESS_ING", folder.folderTotalPages.toString() + "장 중 " + model.ocrIndex + "장 변환")
+                model.VIEW_PROGRESS_ING -> {
+                    Log.i("VIEW_PROGRESS_ING", "OCR service send")
+                    try {
+                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.folderTotalPage)
+                        msgToService.replyTo = mActivityMessenger
+                        mServiceMessenger!!.send(msgToService)
+                    } catch (e: RemoteException) {
+                        e.printStackTrace()
                     }
-                    model.VIEW_TRANS_DONE -> {
-                        try {
-                            msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_DONE, model.ocrIndex)
-                            Log.i("MSG", "service ocr index send: ${model.ocrIndex}")
-                            msgToService.replyTo = mActivityMessenger
-                            mServiceMessenger!!.send(msgToService)
-                        } catch (e: RemoteException) {
-                            e.printStackTrace()
-                        }
-                        views.mEditOCRProgress.setText(model.sumTotalPage().toString() + "장 Done")
-                        views.mEditOcrResult.append(" ")
-                        Log.i("띠띠에스", model.ocrIndex.toString() + "끝?")
-                        folder.uriList.clear()
-                    }
+                    views.mEditOCRProgress.setText("${model.folderTotalPage} 장 중 ${model.ocrIndex} 장 변환")
+                    Log.i("VIEW_PROGRESS_ING", model.folderTotalPage.toString() + "장 중 " + model.ocrIndex + "장 변환")
+                }
+                model.VIEW_TRANS_DONE -> {
+                    Log.i("VIEW_TRANS_DONE", model.folderTotalPage.toString() + "끝?")
 
+                    try {
+                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_DONE, model.folderTotalPage)
+                        Log.i("MSG", "service ocr index send: ${model.folderTotalPage}")
+                        msgToService.replyTo = mActivityMessenger
+                        mServiceMessenger!!.send(msgToService)
+                    } catch (e: RemoteException) {
+                        e.printStackTrace()
+                    }
+                    views.mEditOCRProgress.setText(model.folderTotalPage.toString() + "장 Done")
+                    views.mEditOcrResult.append(" ")
+                    Log.i("VIEW_TRANS_DONE", model.folderTotalPage.toString() + "끝?")
+                    model.ocrIndex = 0
                 }
             }
         }
@@ -348,7 +343,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             }
             R.id.btn_album -> {
                 Log.i("버튼", "앨범 버튼")
-                if (model.ocrIndex < 0) albumClick()
+                if (model.folderMetaList.isEmpty()) albumClick()
             }
         }
     }
@@ -418,14 +413,15 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                         Log.i("folder pick", "colname " + cursor!!.columnNames.contentToString())
                         while (cursor!!.moveToNext()) {
                             Log.i("folder pick", "add: ${
-                                cursor!!.getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.RELATIVE_PATH))}")
+                                cursor!!.getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.RELATIVE_PATH))
+                            }")
                             folder!!.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID))))
                             Log.i("folder pick", "uri add: ${
-                                ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID)))}")
+                                ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID)))
+                            }")
                         }
                         Log.i("folder pick", "list size: ${folder!!.uriList.size}")
                     }
-//                    onActivityResult(model.FOLDER_REQUEST_CODE, RESULT_OK, Intent())
                     model.runOCR(model.FOLDER_REQUEST_CODE, null, mainActivity)
                 }
                 .show()
@@ -438,8 +434,19 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         Log.i("onActivityResult", "resultCode: $resultCode")
         if (resultCode == RESULT_OK) {
             Log.i("onActivityResult", "requestCode: $requestCode")
-            if (requestCode == model.PICTURE_REQUEST_CODE ||
-                    requestCode == model.FOLDER_REQUEST_CODE) {
+            if (requestCode == model.PICTURE_REQUEST_CODE && data != null) {
+                // picked image list allocate
+                val folder: FolderMeta
+
+                model.folderMetaList.add(FolderMeta())
+                folder = model.folderMetaList.first()
+                if (data.data != null) {
+                    // 이미지 한 장만 선택했을 때
+                    folder.uriList.add(data.data!!)
+                    Log.i("DB", "clipData : " + folder.uriList)
+                } else if (data.clipData != null)
+                    for (i in 0 until data.clipData!!.itemCount)
+                        folder.uriList.add(data.clipData!!.getItemAt(i).uri)
                 model.runOCR(requestCode, data, mainActivity)
             } else if (requestCode == model.CREATE_REQUEST_CODE ||
                     requestCode == model.EDIT_REQUEST_CODE) {

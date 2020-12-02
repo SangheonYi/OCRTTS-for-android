@@ -26,28 +26,26 @@ class OCR(inMain: MainActivity)  // 초기화 작업
 
     @Synchronized
     override fun run() {
-        while (model.folderMetaList.isNotEmpty()) {
-            ocrTrans()
-            model.folderMetaList.removeFirst()
-        }
+        for (f in model.folderMetaList) ocrTrans(f)
+        vibrator = main.getSystemService(AppCompatActivity.VIBRATOR_SERVICE) as Vibrator
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            vibrator.vibrate(VibrationEffect.createOneShot(2000, 150))
+        else vibrator.vibrate(500)
         mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_TRANS_DONE)) //변환 끝
         mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET)) //결과 화면 set
         Log.i("OCR", "picked folder number : " + model.folderMetaList.size)
-        model.ocrIndex = -1
         main.terminateService()
     }
 
-    private fun ocrTrans() {
-        val folder = model.folderMetaList.first()
-
+    private fun ocrTrans(folder:FolderMeta) {
         strBuilder.append(model.ocrResult)
-        if (folder.page < folder.uriList.size) {
-//            model.ocrIndex = 0
+        if (folder.page < folder.pickedNumber) {
+            model.ocrIndex += folder.page
             intent = Intent(main, TransService::class.java).putExtra("pageNum", folder.folderTotalPages)
             model.mIsBound = main.bindService(intent, main.mConnection, AppCompatActivity.BIND_AUTO_CREATE)
         }
         Log.i("OCR", model.threadIndex.toString() + "번째 스레드의 run")
-        while (folder.page < folder.uriList.size) {
+        while (folder.page < folder.pickedNumber) {
             try {
                 urione = folder.uriList[folder.page]
                 image = MediaStore.Images.Media.getBitmap(main.contentResolver, urione)
@@ -69,9 +67,5 @@ class OCR(inMain: MainActivity)  // 초기화 작업
             if (model.state == "playing") main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_READ_HIGHLIGHT)) //읽는 중일 시 강조
         }
         Log.i("OCR", "스레드 끝남")
-        vibrator = main.getSystemService(AppCompatActivity.VIBRATOR_SERVICE) as Vibrator
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            vibrator.vibrate(VibrationEffect.createOneShot(2000, 150))
-        else vibrator.vibrate(500)
     }
 }
