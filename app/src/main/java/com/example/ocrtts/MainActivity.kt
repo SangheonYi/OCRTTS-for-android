@@ -348,6 +348,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun albumClick() {
         val writeOption = arrayOf("직접 선택(680장 이하)", "폴더 단위로 변환")
         var checkedOption = 1

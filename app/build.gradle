@@ -22,7 +22,7 @@ android {
 
         defaultConfig {
             applicationId "com.example.ocrtts"
-            minSdkVersion 21
+            minSdkVersion 29
             targetSdkVersion 29
             testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

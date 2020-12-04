@@ -51,18 +51,6 @@ class MyModel internal constructor() {
     //Service
     var mIsBound = false
 
-    private fun allocClipData(requestCode: Int, data: Intent?, main: MainActivity) {
-
-    }
-
-/*    fun sumTotalPage(): Int {
-        var sum = 0
-
-        for (e in folderMetaList) sum += e.folderTotalPages
-        folderTotalPage = sum
-        return sum
-    }*/
-
     private fun setFolderMeta(folder: FolderMeta, main: MainActivity) {
         val curs: Cursor?
 
