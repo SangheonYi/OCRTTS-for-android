@@ -82,13 +82,12 @@ class MyModel internal constructor() {
 
     fun runOCR(requestCode: Int, data: Intent?, main: MainActivity) {
         // OCR translate
-        val thread: OCR
+        val thread = OCR(main) // OCR 진행할 스레드
 
         // image meta data parsing
         // TODO 폴더 단위 변환이면 OCR에서 매 폴더마다 체크해주자.
         for (f in folderMetaList) setFolderMeta(f, main)
         threadIndex++ //생성한 스레드 수
-        thread = OCR(main) // OCR 진행할 스레드
         thread.isDaemon = true
         thread.start()
     }

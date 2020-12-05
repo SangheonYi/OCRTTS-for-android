@@ -196,7 +196,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                             }
                             .setView(fileState)
                             .show()
-                    //onListItemClick확인해봐
                     false // true to keep the Speed Dial open
                 }
                 R.id.fab_DB -> {
@@ -386,7 +385,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         val folderList = ArrayList<String>()
         val pickedFolder = ArrayList<String>()
         val checkBool: BooleanArray
-        var folder: FolderMeta? = null
+        var folder: FolderMeta
 
         while (cursor!!.moveToNext()) {
             if (!folderList.contains(cursor.getString(0))) {
@@ -416,12 +415,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                             Log.i("folder pick", "add: ${
                                 cursor!!.getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.RELATIVE_PATH))
                             }")
-                            folder!!.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID))))
+                            folder.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID))))
                             Log.i("folder pick", "uri add: ${
                                 ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID)))
                             }")
                         }
-                        Log.i("folder pick", "list size: ${folder!!.uriList.size}")
+                        Log.i("folder pick", "list size: ${folder.uriList.size}")
                     }
                     model.runOCR(model.FOLDER_REQUEST_CODE, null, mainActivity)
                 }
@@ -475,39 +474,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             }
         }
     }
-/*
-
-    private fun runOCR(requestCode: Int, data: Intent?) {
-        // OCR translate
-        val thread: OCR
-        val folder = model.folderMetaList.first()
-
-        // picked image list allocate
-        model.allocClipData(requestCode, data, mainActivity)
-        // image meta data parsing
-        // TODO 폴더 단위 변환이면 OCR에서 매 폴더마다 체크해주자.
-        folder.page = myDBOpenHelper!!.getContinuePage(model.title)
-        Log.i("DB", "선택한 폴더(책 제목) : " + model.title)
-        folder.pickedNumber = folder.uriList.size
-        if (myDBOpenHelper!!.isNewTitle(model.title)) {
-            folder.isPageUpdated = false
-            Toast.makeText(applicationContext, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
-        }
-        else if (folder.page < folder.pickedNumber) {
-            folder.isPageUpdated = false
-            Toast.makeText(applicationContext, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
-        }
-        else Toast.makeText(applicationContext, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
-        if (folder.pickedNumber > 0) {
-            model.threadIndex++ //생성한 스레드 수
-            folder.totalPageNum = folder.pickedNumber - folder.page
-            thread = OCR(model, mainActivity) // OCR 진행할 스레드
-            thread.isDaemon = true
-            thread.start()
-            terminateService()
-        } else Log.i("DB", "model.pickedNumber가 0임")
-    }
-*/
 
     private fun setBookTable() {
         val folder: FolderMeta

@@ -2,6 +2,7 @@ package com.example.ocrtts
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Message
@@ -10,7 +11,6 @@ import android.os.Vibrator
 import android.provider.MediaStore
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import java.io.IOException
 
 class OCR(inMain: MainActivity)  // 초기화 작업
     : Thread() {
@@ -19,7 +19,6 @@ class OCR(inMain: MainActivity)  // 초기화 작업
     private val mHandler = main.mHandler
     private val strBuilder = StringBuilder()
     private var transResult: String? = null
-    private var urione: Uri? = null
     private lateinit var intent: Intent
     private lateinit var vibrator: Vibrator
     var image: Bitmap? = null //갤러리에서 이미지 받아와
@@ -46,12 +45,7 @@ class OCR(inMain: MainActivity)  // 초기화 작업
         }
         Log.i("OCR", model.threadIndex.toString() + "번째 스레드의 run")
         while (folder.page < folder.pickedNumber) {
-            try {
-                urione = folder.uriList[folder.page]
-                image = MediaStore.Images.Media.getBitmap(main.contentResolver, urione)
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
+            image = getCapturedImage(folder.uriList[folder.page])
             model.sTess!!.setImage(image)
             model.ocrIndex++
             folder.page++
@@ -67,5 +61,10 @@ class OCR(inMain: MainActivity)  // 초기화 작업
             if (model.state == "playing") main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_READ_HIGHLIGHT)) //읽는 중일 시 강조
         }
         Log.i("OCR", "스레드 끝남")
+    }
+
+    private fun getCapturedImage(selectedPhotoUri: Uri): Bitmap {
+        return if (Build.VERSION.SDK_INT < 28) MediaStore.Images.Media.getBitmap(main.contentResolver, selectedPhotoUri)
+            else ImageDecoder.decodeBitmap(ImageDecoder.createSource(main.contentResolver, selectedPhotoUri))
     }
 }
