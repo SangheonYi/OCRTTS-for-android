@@ -13,7 +13,6 @@ class MyModel internal constructor() {
     val PICTURE_REQUEST_CODE = 100
     val CREATE_REQUEST_CODE = 101
     val EDIT_REQUEST_CODE = 102
-    val FOLDER_REQUEST_CODE = 103
     val VIEW_RESULT_SET = 0
     val VIEW_READING_STATE = 1
     val VIEW_READ_HIGHLIGHT = 2
@@ -55,7 +54,7 @@ class MyModel internal constructor() {
         val curs: Cursor?
 
         if (folder.uriList.isNotEmpty()) {
-            curs = main.contentResolver.query(folder.uriList[0],
+            curs = main.contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     arrayOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME),
                     null, null, null)
             if (curs!!.moveToNext()) {
@@ -80,7 +79,7 @@ class MyModel internal constructor() {
         else Toast.makeText(main, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
     }
 
-    fun runOCR(requestCode: Int, data: Intent?, main: MainActivity) {
+    fun runOCR(main: MainActivity) {
         // OCR translate
         val thread = OCR(main) // OCR 진행할 스레드
 

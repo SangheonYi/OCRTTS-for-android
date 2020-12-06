@@ -44,7 +44,11 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             val msgToService: Message
 
             when (msg.what) {
-                model.VIEW_RESULT_SET -> views.mEditOcrResult.setText(model.ocrResult)
+                model.VIEW_RESULT_SET -> {
+                    views.mEditOcrResult.setText(model.ocrResult)
+                    views.mEditOcrResult.append("append")
+                    msg.obj
+                }
                 model.VIEW_READING_STATE -> {
                     model.readState = model.bigText.size.toString() + "문장 중 " + (model.readIndex + 1) + "번째"
                     views.mEditReadingState.setText(model.readState)
@@ -422,7 +426,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                         }
                         Log.i("folder pick", "list size: ${folder.uriList.size}")
                     }
-                    model.runOCR(model.FOLDER_REQUEST_CODE, null, mainActivity)
+                    model.runOCR(mainActivity)
                 }
                 .show()
     }
@@ -447,7 +451,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 } else if (data.clipData != null)
                     for (i in 0 until data.clipData!!.itemCount)
                         folder.uriList.add(data.clipData!!.getItemAt(i).uri)
-                model.runOCR(requestCode, data, mainActivity)
+                model.runOCR(mainActivity)
             } else if (requestCode == model.CREATE_REQUEST_CODE ||
                     requestCode == model.EDIT_REQUEST_CODE) {
                 if (data != null) {
