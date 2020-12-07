@@ -48,7 +48,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 model.VIEW_RESULT_SET -> {
                     views.mEditOcrResult.setText(model.ocrResult)
                     views.mEditOcrResult.append("append")
-                    msg.obj
                 }
                 model.VIEW_READING_STATE -> {
                     model.readState = model.bigText.size.toString() + "문장 중 " + (model.readIndex + 1) + "번째"
