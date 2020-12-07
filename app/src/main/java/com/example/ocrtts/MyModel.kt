@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.googlecode.tesseract.android.TessBaseAPI
 
 class MyModel internal constructor() {
@@ -50,7 +51,7 @@ class MyModel internal constructor() {
     //Service
     var mIsBound = false
 
-    private fun setFolderMeta(folder: FolderMeta, main: MainActivity) {
+    private fun setFolderMeta(folder: FolderMeta, main: MainActivity): Int {
         val curs: Cursor?
 
         if (folder.uriList.isNotEmpty()) {
@@ -77,17 +78,19 @@ class MyModel internal constructor() {
             Toast.makeText(main, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
         }
         else Toast.makeText(main, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
+        return if (folder.page < folder.pickedNumber)  1 else 0
     }
 
     fun runOCR(main: MainActivity) {
         // OCR translate
-        val thread = OCR(main) // OCR 진행할 스레드
+        val intent: Intent
+        var validCnt = 0
 
         // image meta data parsing
-        // TODO 폴더 단위 변환이면 OCR에서 매 폴더마다 체크해주자.
-        for (f in folderMetaList) setFolderMeta(f, main)
-        threadIndex++ //생성한 스레드 수
-        thread.isDaemon = true
-        thread.start()
+        for (f in folderMetaList) validCnt += setFolderMeta(f, main)
+        if (0 < validCnt) {
+            intent = Intent(main, TransService::class.java).putExtra("pageNum", folderTotalPage)
+            mIsBound = main.bindService(intent, main.mConnection, AppCompatActivity.BIND_AUTO_CREATE)
+        }
     }
 }

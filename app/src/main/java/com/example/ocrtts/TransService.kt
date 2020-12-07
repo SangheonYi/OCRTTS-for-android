@@ -28,7 +28,7 @@ class TransService : Service() {
         startForegroundService()
     }
 
-    fun startForegroundService() {
+    private fun startForegroundService() {
         notifiManagerCompat = NotificationManagerCompat.from(this)
         builder = if (Build.VERSION.SDK_INT >= 26) {
             val CHANNEL_ID = "ocr_service_channel"

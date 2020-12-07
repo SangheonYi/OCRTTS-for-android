@@ -3,6 +3,7 @@ package com.example.ocrtts
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.*
+import android.graphics.Bitmap
 import android.os.*
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -104,6 +105,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     views.mEditOCRProgress.setText(model.folderTotalPage.toString() + "장 Done")
                     views.mEditOcrResult.append(" ")
                     Log.i("VIEW_TRANS_DONE", model.folderTotalPage.toString() + "끝?")
+                    model.folderMetaList.clear()
                     model.ocrIndex = 0
                 }
             }
@@ -113,6 +115,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     val mConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
             var msg: Message
+            val thread = OCR(mainActivity) // OCR 진행할 스레드
 
             mServiceMessenger = Messenger(iBinder)
             Log.i("MSG", "onServiceConnected main send")
@@ -126,6 +129,9 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             } catch (e: RemoteException) {
                 e.printStackTrace()
             }
+            model.threadIndex++ //생성한 스레드 수
+            thread.isDaemon = true
+            thread.start()
         }
 
         override fun onServiceDisconnected(componentName: ComponentName) {}
@@ -538,7 +544,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     fun terminateService() {
         Log.i("Service", "terminateService called is bound? ${model.mIsBound}")
         if (model.mIsBound) {
-            val msg = Message.obtain(null, TransService.DISCONNECT, 0)
+            val msg = Message.obtain(null, TransService.DISCONNECT)
 
             Log.i("DB", "now service will terminate")
             try {
