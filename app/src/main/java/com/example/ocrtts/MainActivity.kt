@@ -3,7 +3,6 @@ package com.example.ocrtts
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.*
-import android.graphics.Bitmap
 import android.os.*
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -46,8 +45,9 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
 
             when (msg.what) {
                 model.VIEW_RESULT_SET -> {
-                    views.mEditOcrResult.setText(model.ocrResult)
-                    views.mEditOcrResult.append("append")
+//                    views.mEditOcrResult.setText(model.ocrResult)
+                    Log.i("VIEW_RESULT_SET", "result set ${msg.obj}")
+                    views.mEditOcrResult.append(msg.obj.toString())
                 }
                 model.VIEW_READING_STATE -> {
                     model.readState = model.bigText.size.toString() + "문장 중 " + (model.readIndex + 1) + "번째"
@@ -485,24 +485,20 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     }
 
     private fun setBookTable() {
-        val folder: FolderMeta
-
-        if (model.folderMetaList.isNotEmpty()) {
-            folder = model.folderMetaList.first()
-            if (!folder.isPageUpdated) folder.isPageUpdated = true
-            folder.titleLastPage = """
-               ${folder.title}
-               Page: ${folder.page}
-               """.trimIndent()
-            myDBOpenHelper!!.open()
-            if (model.threadIndex > 0 && myDBOpenHelper!!.isNewTitle(folder.title)) {
-                if (myDBOpenHelper!!.insertColumn(folder.title, folder.page.toLong(), folder.titleLastPage, 0) != -1L)
-                    Log.i("DB", "DB에 삽입됨 : " + folder.title + "  " + folder.page)
-                else Log.i("DB", "DB에 삽입 에러 -1 : " + folder.title + "  " + folder.page)
-            } else if (model.threadIndex > 0 && !myDBOpenHelper!!.isNewTitle(folder.title)) {
-                if (myDBOpenHelper!!.updateColumn(myDBOpenHelper!!.getIdByTitle(folder.title), folder.title, folder.page.toLong(), folder.titleLastPage, 0))
-                    Log.i("DB", "DB 갱신 됨 : " + folder.title + "  " + folder.page)
-                else Log.i("DB", "DB 갱신 실패 updateColumn <= 0 : " + folder.title + "  " + folder.page)
+        for (f in model.folderMetaList) {
+            if (f.saverPermit) {
+                if (!f.isPageUpdated) f.isPageUpdated = true
+                f.titleLastPage = """${f.title}Page: ${f.page}""".trimIndent()
+                myDBOpenHelper!!.open()
+                if (model.threadIndex > 0 && myDBOpenHelper!!.isNewTitle(f.title)) {
+                    if (myDBOpenHelper!!.insertColumn(f.title, f.page.toLong(), f.titleLastPage, 0) != -1L)
+                        Log.i("DB", "DB에 삽입됨 : " + f.title + "  " + f.page)
+                    else Log.i("DB", "DB에 삽입 에러 -1 : " + f.title + "  " + f.page)
+                } else if (model.threadIndex > 0 && !myDBOpenHelper!!.isNewTitle(f.title)) {
+                    if (myDBOpenHelper!!.updateColumn(myDBOpenHelper!!.getIdByTitle(f.title), f.title, f.page.toLong(), f.titleLastPage, 0))
+                        Log.i("DB", "DB 갱신 됨 : " + f.title + "  " + f.page)
+                    else Log.i("DB", "DB 갱신 실패 updateColumn <= 0 : " + f.title + "  " + f.page)
+                }
             }
         }
     }
@@ -571,6 +567,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         mTts.shutdown()
         Log.i("onDestroy", "onDestroy()")
         if (model.threadIndex > 0 && model.safUri != null) {
+            model.ocrResult = views.mEditOcrResult.text.toString()
             model.frw.alterDocument(mainActivity, model.ocrResult, model.safUri)
             setBookTable()
         } else Log.i("onPause()", "thread is negative")

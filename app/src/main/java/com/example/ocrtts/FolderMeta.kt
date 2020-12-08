@@ -10,4 +10,5 @@ class FolderMeta {
     var isPageUpdated = false
     var folderTotalPages = 0
     var uriList = ArrayList<Uri>()
+    var saverPermit = false
 }
