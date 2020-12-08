@@ -44,7 +44,6 @@ class MyModel internal constructor() {
     //Data
     var frw = SAFRW()
     var safUri: Uri? = null
-//    var title = "no title"
     val folderMetaList = arrayListOf<FolderMeta>()
     val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
 
@@ -54,7 +53,7 @@ class MyModel internal constructor() {
     private fun setFolderMeta(folder: FolderMeta, main: MainActivity): Int {
         val curs: Cursor?
 
-        if (folder.uriList.isNotEmpty()) {
+        /*if (folder.uriList.isNotEmpty()) {
             curs = main.contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     arrayOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME),
                     null, null, null)
@@ -63,7 +62,7 @@ class MyModel internal constructor() {
                 folder.title = curs.getString(0)
             }
             curs.close()
-        }
+        }*/
         folder.page = main.myDBOpenHelper!!.getContinuePage(folder.title)
         Log.i("runOCR", "선택한 폴더(책 제목) : " + folder.title)
         folder.pickedNumber = folder.uriList.size

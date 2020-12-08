@@ -104,7 +104,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     views.mEditOCRProgress.setText(model.folderTotalPage.toString() + "장 Done")
                     views.mEditOcrResult.append(" ")
                     Log.i("VIEW_TRANS_DONE", model.folderTotalPage.toString() + "끝?")
-                    model.folderMetaList.clear()
                     model.ocrIndex = 0
                 }
             }
@@ -409,6 +408,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         views.folderMADB.setTitle("폴더 단위로 변환")
                 .setMultiChoiceItems(folderList.toTypedArray(), checkBool) { dialog, which, isChecked ->
                     if (isChecked && !pickedFolder.contains(folderList[which])) pickedFolder.add(folderList[which])
+                    else if (!isChecked && pickedFolder.contains(folderList[which])) pickedFolder.remove(folderList[which])
                 }
                 .setPositiveButton("Ok") { dialog, which ->
                     Log.i("folder pick", which.toString())
@@ -429,6 +429,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                                 ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID)))
                             }")
                         }
+                        cursor!!.moveToFirst()
+                        folder.title = cursor!!.getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.RELATIVE_PATH))
                         Log.i("folder pick", "list size: ${folder.uriList.size}")
                     }
                     model.runOCR(mainActivity)
@@ -457,8 +459,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     for (i in 0 until data.clipData!!.itemCount)
                         folder.uriList.add(data.clipData!!.getItemAt(i).uri)
                 model.runOCR(mainActivity)
-            } else if (requestCode == model.CREATE_REQUEST_CODE ||
-                    requestCode == model.EDIT_REQUEST_CODE) {
+            }
+            else if (requestCode == model.CREATE_REQUEST_CODE || requestCode == model.EDIT_REQUEST_CODE) {
                 if (data != null) {
                     var pathStr = ""
                     val pathArray: Array<String>
@@ -492,12 +494,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 myDBOpenHelper!!.open()
                 if (model.threadIndex > 0 && myDBOpenHelper!!.isNewTitle(f.title)) {
                     if (myDBOpenHelper!!.insertColumn(f.title, f.page.toLong(), f.titleLastPage, 0) != -1L)
-                        Log.i("DB", "DB에 삽입됨 : " + f.title + "  " + f.page)
-                    else Log.i("DB", "DB에 삽입 에러 -1 : " + f.title + "  " + f.page)
+                        Log.i("setBookTable", "DB에 삽입됨 : " + f.title + "  " + f.page)
+                    else Log.i("setBookTable", "DB에 삽입 에러 -1 : " + f.title + "  " + f.page)
                 } else if (model.threadIndex > 0 && !myDBOpenHelper!!.isNewTitle(f.title)) {
                     if (myDBOpenHelper!!.updateColumn(myDBOpenHelper!!.getIdByTitle(f.title), f.title, f.page.toLong(), f.titleLastPage, 0))
-                        Log.i("DB", "DB 갱신 됨 : " + f.title + "  " + f.page)
-                    else Log.i("DB", "DB 갱신 실패 updateColumn <= 0 : " + f.title + "  " + f.page)
+                        Log.i("setBookTable", "DB 갱신 됨 : " + f.title + "  " + f.page)
+                    else Log.i("setBookTable", "DB 갱신 실패 updateColumn <= 0 : " + f.title + "  " + f.page)
                 }
             }
         }
@@ -565,12 +567,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         terminateService()
         mTts.stop()
         mTts.shutdown()
-        Log.i("onDestroy", "onDestroy()")
+        Log.i("onDestroy", "onDestroy() threadIndex: ${model.threadIndex}")
         if (model.threadIndex > 0 && model.safUri != null) {
             model.ocrResult = views.mEditOcrResult.text.toString()
             model.frw.alterDocument(mainActivity, model.ocrResult, model.safUri)
             setBookTable()
-        } else Log.i("onPause()", "thread is negative")
+        } else Log.i("onPause()", "thread ${model.threadIndex > 0} safUri ${model.safUri != null}")
         model.sTess!!.clear()
         model.sTess!!.end()
         super.onDestroy()
