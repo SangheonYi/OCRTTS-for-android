@@ -51,18 +51,6 @@ class MyModel internal constructor() {
     var mIsBound = false
 
     private fun setFolderMeta(folder: FolderMeta, main: MainActivity): Int {
-        val curs: Cursor?
-
-        /*if (folder.uriList.isNotEmpty()) {
-            curs = main.contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    arrayOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME),
-                    null, null, null)
-            if (curs!!.moveToNext()) {
-                Log.i("title: ", curs.getString(0))
-                folder.title = curs.getString(0)
-            }
-            curs.close()
-        }*/
         folder.page = main.myDBOpenHelper!!.getContinuePage(folder.title)
         Log.i("runOCR", "선택한 폴더(책 제목) : " + folder.title)
         folder.pickedNumber = folder.uriList.size

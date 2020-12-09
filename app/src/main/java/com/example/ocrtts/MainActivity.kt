@@ -45,7 +45,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
 
             when (msg.what) {
                 model.VIEW_RESULT_SET -> {
-//                    views.mEditOcrResult.setText(model.ocrResult)
                     Log.i("VIEW_RESULT_SET", "result set ${msg.obj}")
                     views.mEditOcrResult.append(msg.obj.toString())
                 }
@@ -316,7 +315,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                             Log.i("버튼", model.readIndex.toString() + "번째null인지? : " + model.bigText.isSentenceNull(model.readIndex))
                             model.readIndex--
                             model.charSum -= model.bigText.sentence[model.readIndex].length
-                        } //while 없으면 높히 곡도를~에서도 갇힘 있으면 편히 잠들어라 에서만 갇힘
+                        }
                     }
                     mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
                 }
@@ -372,7 +371,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                             // ACTION_OPEN_DOCUMENT는 문서에 대한 지속적 장기적 액세스 권한을 받음. 사진 편집 등
                             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
                             // ACTION_GET_CONTENT는 데이터 사본을 가져온다.
-                            // val intent = Intent(Intent.ACTION_GET_CONTENT)
                             //사진을 여러개 선택할수 있도록 한다
                             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                             intent.type = "image/*"
