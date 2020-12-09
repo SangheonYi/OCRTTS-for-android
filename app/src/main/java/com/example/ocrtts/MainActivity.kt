@@ -68,8 +68,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     views.mEditOcrResult.clearFocus()
                     model.state = "Stop"
                     mTts.stop()
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_BUTTON_IMG, 0)) //버튼 이미지 바꿈
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE))
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_BUTTON_IMG)) //버튼 이미지 바꿈
                     Log.i("띠띠에스", "리셋")
                 }
                 model.VIEW_BUTTON_IMG -> {
@@ -241,7 +241,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 R.id.fab_flush_edittxt -> {
                     Log.i("fab", "클릭 fab_flush_edittxt")
                     model.ocrResult = " "
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET, 0)) //결과화면 set
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET, model.ocrResult)) //결과화면 set
                     Toast.makeText(applicationContext, "Text cleared", Toast.LENGTH_LONG).show()
                     false
                 }
