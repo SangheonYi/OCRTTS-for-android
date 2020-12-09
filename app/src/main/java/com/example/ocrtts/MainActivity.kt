@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     views.mEditOCRProgress.setText(model.folderTotalPage.toString() + "장 Done")
                     views.mEditOcrResult.append(" ")
                     Log.i("VIEW_TRANS_DONE", model.folderTotalPage.toString() + "끝?")
-                    model.ocrIndex = 0
+                    model.ocrIndex = -1
                 }
             }
         }
@@ -349,7 +349,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             }
             R.id.btn_album -> {
                 Log.i("버튼", "앨범 버튼")
-                if (model.folderMetaList.isEmpty()) albumClick()
+                if (model.ocrIndex < 0) albumClick()
             }
         }
     }

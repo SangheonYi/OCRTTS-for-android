@@ -28,7 +28,7 @@ class MyModel internal constructor() {
     var sTess: TessBaseAPI? = null
     var dataPath = "" //can
     var lang = "kor"//can
-    var ocrIndex = 0 //OCR 진행 중인 이미지 번호
+    var ocrIndex = -1 //OCR 진행 중인 이미지 번호
     var threadIndex = 0 //thread 시행횟수
     var folderTotalPage = 0 //thread 시행횟수
 
@@ -73,6 +73,7 @@ class MyModel internal constructor() {
         val intent: Intent
         var validCnt = 0
 
+        ocrIndex = 0
         // image meta data parsing
         for (f in folderMetaList) validCnt += setFolderMeta(f, main)
         if (0 < validCnt) {
