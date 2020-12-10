@@ -104,6 +104,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     views.mEditOcrResult.append(" ")
                     Log.i("VIEW_TRANS_DONE", model.folderTotalPage.toString() + "끝?")
                     model.ocrIndex = -1
+                    model.folderTotalPage = 0
                 }
             }
         }

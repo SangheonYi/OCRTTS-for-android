@@ -30,7 +30,7 @@ class MyModel internal constructor() {
     var lang = "kor"//can
     var ocrIndex = -1 //OCR 진행 중인 이미지 번호
     var threadIndex = 0 //thread 시행횟수
-    var folderTotalPage = 0 //thread 시행횟수
+    var folderTotalPage = 0 //전체 페이지 수
 
     //Text, TTS
     var ocrResult = " " //OCR 결과값 받음

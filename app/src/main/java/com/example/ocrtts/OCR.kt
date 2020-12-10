@@ -27,6 +27,7 @@ class OCR(inMain: MainActivity)  // 초기화 작업
             model.ocrIndex += f.page
             f.saverPermit = true
             ocrTrans(f)
+            f.uriList.clear()
             Log.i("OCR", "스레드 끝남")
         }
         vibrator = main.getSystemService(AppCompatActivity.VIBRATOR_SERVICE) as Vibrator
