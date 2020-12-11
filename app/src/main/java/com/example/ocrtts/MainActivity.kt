@@ -355,7 +355,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     private fun albumClick() {
         val writeOption = arrayOf("직접 선택(680장 이하)", "폴더 단위로 변환")
         var checkedOption = 1
@@ -384,9 +383,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 .show()
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
-    fun pickFolders() {
-        var projection = arrayOf(MediaStore.Images.ImageColumns.RELATIVE_PATH)
+    private fun pickFolders() {
+        var projection = arrayOf(model.mediaRPath)
         var cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection, null, null, null)
         val folderList = ArrayList<String>()
@@ -415,21 +413,18 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                         //선택한 폴더들의 이미지들 Uri 획득하기
                         model.folderMetaList.add(FolderMeta())
                         folder = model.folderMetaList.last()
-                        projection = arrayOf(MediaStore.Images.ImageColumns._ID, MediaStore.Images.ImageColumns.RELATIVE_PATH)
+                        projection = arrayOf(MediaStore.Images.ImageColumns._ID, model.mediaRPath)
                         cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                projection, MediaStore.Images.ImageColumns.RELATIVE_PATH + " = ?", arrayOf(e), model.sortOrder)
+                                projection, model.mediaRPath + " = ?", arrayOf(e), model.sortOrder)
                         Log.i("folder pick", "colname " + cursor!!.columnNames.contentToString())
                         while (cursor!!.moveToNext()) {
-                            Log.i("folder pick", "add: ${
-                                cursor!!.getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.RELATIVE_PATH))
-                            }")
                             folder.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID))))
                             Log.i("folder pick", "uri add: ${
                                 ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID)))
                             }")
                         }
                         cursor!!.moveToFirst()
-                        folder.title = cursor!!.getString(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns.RELATIVE_PATH))
+                        folder.title = cursor!!.getString(cursor!!.getColumnIndex(model.mediaRPath))
                         Log.i("folder pick", "list size: ${folder.uriList.size}")
                     }
                     model.runOCR(mainActivity)
@@ -437,7 +432,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 .show()
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     @Synchronized
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)

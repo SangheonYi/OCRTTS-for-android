@@ -1,8 +1,8 @@
 package com.example.ocrtts
 
 import android.content.Intent
-import android.database.Cursor
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
@@ -23,6 +23,10 @@ class MyModel internal constructor() {
     val VIEW_TRANS_DONE = 6
     val TAG = "TextToSpeech"
     val MIME_TEXT = "text/plain"
+    val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
+    val mediaRPath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        MediaStore.Images.ImageColumns.RELATIVE_PATH
+    else MediaStore.MediaColumns.BUCKET_DISPLAY_NAME
 
     //OCR
     var sTess: TessBaseAPI? = null
@@ -45,7 +49,6 @@ class MyModel internal constructor() {
     var frw = SAFRW()
     var safUri: Uri? = null
     val folderMetaList = arrayListOf<FolderMeta>()
-    val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
 
     //Service
     var mIsBound = false
@@ -59,13 +62,11 @@ class MyModel internal constructor() {
         if (main.myDBOpenHelper!!.isNewTitle(folder.title)) {
             folder.isPageUpdated = false
             Toast.makeText(main, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
-        }
-        else if (folder.page < folder.pickedNumber) {
+        } else if (folder.page < folder.pickedNumber) {
             folder.isPageUpdated = false
             Toast.makeText(main, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
-        }
-        else Toast.makeText(main, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
-        return if (folder.page < folder.pickedNumber)  1 else 0
+        } else Toast.makeText(main, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
+        return if (folder.page < folder.pickedNumber) 1 else 0
     }
 
     fun runOCR(main: MainActivity) {
