@@ -24,7 +24,7 @@ class MyModel internal constructor() {
     val TAG = "TextToSpeech"
     val MIME_TEXT = "text/plain"
     val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
-    val mediaRPath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+    val mediaFolder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         MediaStore.Images.ImageColumns.RELATIVE_PATH
     else MediaStore.MediaColumns.BUCKET_DISPLAY_NAME
 

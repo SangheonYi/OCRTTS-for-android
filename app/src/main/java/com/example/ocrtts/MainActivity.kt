@@ -13,7 +13,6 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.googlecode.tesseract.android.TessBaseAPI
@@ -384,7 +383,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     }
 
     private fun pickFolders() {
-        var projection = arrayOf(model.mediaRPath)
+        var projection = arrayOf(model.mediaFolder)
         var cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection, null, null, null)
         val folderList = ArrayList<String>()
@@ -413,9 +412,9 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                         //선택한 폴더들의 이미지들 Uri 획득하기
                         model.folderMetaList.add(FolderMeta())
                         folder = model.folderMetaList.last()
-                        projection = arrayOf(MediaStore.Images.ImageColumns._ID, model.mediaRPath)
+                        projection = arrayOf(MediaStore.Images.ImageColumns._ID, model.mediaFolder)
                         cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                projection, model.mediaRPath + " = ?", arrayOf(e), model.sortOrder)
+                                projection, model.mediaFolder + " = ?", arrayOf(e), model.sortOrder)
                         Log.i("folder pick", "colname " + cursor!!.columnNames.contentToString())
                         while (cursor!!.moveToNext()) {
                             folder.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID))))
@@ -424,7 +423,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                             }")
                         }
                         cursor!!.moveToFirst()
-                        folder.title = cursor!!.getString(cursor!!.getColumnIndex(model.mediaRPath))
+                        folder.title = cursor!!.getString(cursor!!.getColumnIndex(model.mediaFolder))
                         Log.i("folder pick", "list size: ${folder.uriList.size}")
                     }
                     model.runOCR(mainActivity)
