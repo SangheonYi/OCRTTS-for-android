@@ -7,6 +7,17 @@
     android:layout_height="match_parent"
     tools:layout_editor_absoluteY="25dp">
 
+    <com.google.android.gms.ads.AdView
+        android:id="@+id/adView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        app:adSize="BANNER"
+        app:adUnitId="ca-app-pub-3940256099942544/6300978111"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"></com.google.android.gms.ads.AdView>
 
     <ImageButton
         android:id="@+id/btn_album"
@@ -112,15 +123,17 @@
 
 
     <ScrollView
+        android:id="@+id/scrollView2"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toTopOf="@+id/btn_album"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/btn_album"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@+id/adView">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -131,9 +144,9 @@
                 android:id="@+id/edit_ocrresult"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:hint="추출된 글자"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
+                android:hint="추출된 글자"
                 tools:layout_editor_absoluteX="7dp"
                 tools:layout_editor_absoluteY="356dp"></EditText>
         </LinearLayout>

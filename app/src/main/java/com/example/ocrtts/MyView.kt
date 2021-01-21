@@ -4,6 +4,8 @@ import android.graphics.Color
 import android.widget.EditText
 import android.widget.ImageButton
 import androidx.core.content.res.ResourcesCompat
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.leinardi.android.speeddial.SpeedDialActionItem
 import com.leinardi.android.speeddial.SpeedDialView
@@ -23,6 +25,7 @@ class MyView {
     lateinit var writeMADB: MaterialAlertDialogBuilder
     lateinit var albumMADB: MaterialAlertDialogBuilder
     lateinit var folderMADB: MaterialAlertDialogBuilder
+    lateinit var mAdView : AdView
 
     fun viewsCreate(main: MainActivity){
         val resources = main.resources
@@ -41,6 +44,10 @@ class MyView {
         mSlowerButton = main.findViewById(R.id.slower)
         albumButton = main.findViewById(R.id.btn_album)
         speedDialView = main.findViewById(R.id.speedDial)
+
+        // Ad
+        mAdView = main.findViewById(R.id.adView)
+        mAdView.loadAd(AdRequest.Builder().build())
 
         // Dialog
         writeMADB = MaterialAlertDialogBuilder(main)
