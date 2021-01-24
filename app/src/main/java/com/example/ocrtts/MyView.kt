@@ -25,6 +25,7 @@ class MyView {
     lateinit var writeMADB: MaterialAlertDialogBuilder
     lateinit var albumMADB: MaterialAlertDialogBuilder
     lateinit var folderMADB: MaterialAlertDialogBuilder
+    lateinit var saveHelp: MaterialAlertDialogBuilder
     lateinit var mAdView : AdView
 
     fun viewsCreate(main: MainActivity){
@@ -89,4 +90,5 @@ class MyView {
                         .create()
         )
     }
+
 }

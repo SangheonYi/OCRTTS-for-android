@@ -169,12 +169,47 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
 
         // 터치 이벤트 제거
         views.mEditOcrResult.setOnTouchListener { view, event -> true }
+        setSpeedDial()
+        Log.i("onCreate()", "Thread.currentThread().getName()" + Thread.currentThread().name)
+        mTts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            //음성 발성 listener
+            override fun onStart(utteranceId: String) {
+                Log.i("띠띠에스", model.readIndex.toString() + "번째null인지? : " + model.bigText.isSentenceNull(model.readIndex))
+                if (model.readIndex < model.bigText.size) {
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READ_HIGHLIGHT, 0))
+                } else {
+                    Log.i("띠띠에스", "완독start")
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESET, 0))
+                }
+                Log.i("띠띠에스", "ReadIndex: " + model.readIndex + " 빅텍 Sentence:  @@" + model.bigText.sentence[model.readIndex] + "@@")
+            }
+
+            override fun onDone(utteranceId: String) {
+                model.charSum += model.bigText.sentence[model.readIndex].length
+                Log.i("띠띠에스", "이야 다 시부렸어라")
+                mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
+                model.readIndex++
+                if (model.readIndex < model.bigText.size) mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id") else {
+                    Log.i("띠띠에스", "완독done")
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESET, 0))
+                }
+            }
+
+            override fun onError(utteranceId: String) {
+                Log.e("띠띠에스", "Fuck you")
+            }
+        })
+    }
+
+    private fun setSpeedDial() {
         views.speedDialView.setOnActionSelectedListener { speedDialActionItem ->
             when (speedDialActionItem.id) {
                 R.id.fab_write_txt -> {
                     val writeOption = arrayOf("파일생성", "이어쓰기")
-                    var checkedOption = 1
+                    val popOption = arrayOf("더 이상 보지 않기")
                     val fileState = TextView(mainActivity)
+                    var checkedOption = 1
 
                     Log.i("fab", "클릭 fab_write_txt")
                     //대화상자 설정
@@ -202,6 +237,26 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                                 }
                             }
                             .setView(fileState)
+                            .show()
+                    views.saveHelp.setTitle("도움말")
+                            .setSingleChoiceItems(popOption, checkedOption) { dialog, which ->
+                                checkedOption = which
+                            }
+                            .setMessage("변환된 파일을 저장합니다.\n" +
+                                    "저장할 파일을 선택하거나 새로 생성합니다.\n" +
+                                    "어플 종료 시 결과가 선택하신 파일에 자동으로 저장됩니다.\n")
+                            .setPositiveButton("Ok") { dialog, which ->
+                                val intent: Intent
+
+                                when (checkedOption) {
+                                    0 -> {
+                                        Log.i("frw", "저장 case 0 파일생성")
+                                        intent = if (model.folderMetaList.isNotEmpty()) model.frw.createFile(model.MIME_TEXT, model.folderMetaList.first().title)
+                                        else model.frw.createFile(model.MIME_TEXT, "no title")
+                                        startActivityForResult(intent, model.CREATE_REQUEST_CODE)
+                                    }
+                                }
+                            }
                             .show()
                     false // true to keep the Speed Dial open
                 }
@@ -248,36 +303,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 else -> false
             }
         }
-        Log.i("onCreate()", "Thread.currentThread().getName()" + Thread.currentThread().name)
-        mTts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            //음성 발성 listener
-            override fun onStart(utteranceId: String) {
-                Log.i("띠띠에스", model.readIndex.toString() + "번째null인지? : " + model.bigText.isSentenceNull(model.readIndex))
-                if (model.readIndex < model.bigText.size) {
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READ_HIGHLIGHT, 0))
-                } else {
-                    Log.i("띠띠에스", "완독start")
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESET, 0))
-                }
-                Log.i("띠띠에스", "ReadIndex: " + model.readIndex + " 빅텍 Sentence:  @@" + model.bigText.sentence[model.readIndex] + "@@")
-            }
-
-            override fun onDone(utteranceId: String) {
-                model.charSum += model.bigText.sentence[model.readIndex].length
-                Log.i("띠띠에스", "이야 다 시부렸어라")
-                mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
-                model.readIndex++
-                if (model.readIndex < model.bigText.size) mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id") else {
-                    Log.i("띠띠에스", "완독done")
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESET, 0))
-                }
-            }
-
-            override fun onError(utteranceId: String) {
-                Log.e("띠띠에스", "Fuck you")
-            }
-        })
     }
 
     override fun onClick(src: View) {
