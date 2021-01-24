@@ -56,6 +56,7 @@ class MyView {
         writeMADB = MaterialAlertDialogBuilder(main)
         albumMADB = MaterialAlertDialogBuilder(main)
         folderMADB = MaterialAlertDialogBuilder(main)
+        saveHelp =MaterialAlertDialogBuilder(main)
 
         mPlayButton.setOnClickListener(main)
         mStopButton.setOnClickListener(main)

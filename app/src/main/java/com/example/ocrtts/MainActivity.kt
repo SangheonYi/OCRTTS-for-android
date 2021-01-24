@@ -210,7 +210,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 R.id.fab_write_txt -> {
                     var checkedOption = 1
                     val writeOption = arrayOf("파일생성", "이어쓰기")
-                    val popOption = arrayOf("더 이상 보지 않기")
+                    val popOption = arrayOf("더 이상 보지 않기", "아ㅏㅏ")
                     val fileState = TextView(mainActivity)
                     val myPref = getSharedPreferences(model.PREFS_NAME, MODE_PRIVATE)
                     val prefEdit = myPref.edit()
@@ -244,17 +244,14 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                             .show()
                     if (myPref.getBoolean("save_guide_again", true))
                     views.saveHelp.setTitle("도움말")
-                            .setSingleChoiceItems(popOption, checkedOption) { dialog, which ->
-                                checkedOption = which
-                            }
-                            .setMessage("변환된 파일을 저장합니다.\n" +
+                            .setMessage("변환된 파일을 저장할 수 있습니다.\n" +
                                     "저장할 파일을 선택하거나 새로 생성합니다.\n" +
-                                    "어플 종료 시 결과가 선택하신 파일에 자동으로 저장됩니다.\n")
+                                    "어플 종료 시 결과가 선택하신 파일에 자동으로 저장됩니다.")
+                            .setNeutralButton("더 이상 보지 않기") { dialog, which ->
+                                prefEdit.putBoolean(model.SAVE_GUIDE_AGAIN, false)
+                                prefEdit.apply()
+                            }
                             .setPositiveButton("Ok") { dialog, which ->
-                                if (checkedOption == 1) {
-                                    prefEdit.putBoolean(model.SAVE_GUIDE_AGAIN, false)
-                                    prefEdit.apply()
-                                }
                             }
                             .show()
                     false // true to keep the Speed Dial open
