@@ -1,3 +1,5 @@
+// main activity
+
 package com.example.ocrtts
 
 import android.Manifest
@@ -206,10 +208,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         views.speedDialView.setOnActionSelectedListener { speedDialActionItem ->
             when (speedDialActionItem.id) {
                 R.id.fab_write_txt -> {
+                    var checkedOption = 1
                     val writeOption = arrayOf("파일생성", "이어쓰기")
                     val popOption = arrayOf("더 이상 보지 않기")
                     val fileState = TextView(mainActivity)
-                    var checkedOption = 1
+                    val myPref = getSharedPreferences(model.PREFS_NAME, MODE_PRIVATE)
+                    val prefEdit = myPref.edit()
 
                     Log.i("fab", "클릭 fab_write_txt")
                     //대화상자 설정
@@ -238,6 +242,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                             }
                             .setView(fileState)
                             .show()
+                    if (myPref.getBoolean("save_guide_again", true))
                     views.saveHelp.setTitle("도움말")
                             .setSingleChoiceItems(popOption, checkedOption) { dialog, which ->
                                 checkedOption = which
@@ -246,15 +251,9 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                                     "저장할 파일을 선택하거나 새로 생성합니다.\n" +
                                     "어플 종료 시 결과가 선택하신 파일에 자동으로 저장됩니다.\n")
                             .setPositiveButton("Ok") { dialog, which ->
-                                val intent: Intent
-
-                                when (checkedOption) {
-                                    0 -> {
-                                        Log.i("frw", "저장 case 0 파일생성")
-                                        intent = if (model.folderMetaList.isNotEmpty()) model.frw.createFile(model.MIME_TEXT, model.folderMetaList.first().title)
-                                        else model.frw.createFile(model.MIME_TEXT, "no title")
-                                        startActivityForResult(intent, model.CREATE_REQUEST_CODE)
-                                    }
+                                if (checkedOption == 1) {
+                                    prefEdit.putBoolean(model.SAVE_GUIDE_AGAIN, false)
+                                    prefEdit.apply()
                                 }
                             }
                             .show()

@@ -1,3 +1,5 @@
+// set variables, run ocr
+
 package com.example.ocrtts
 
 import android.content.Intent
@@ -21,6 +23,8 @@ class MyModel internal constructor() {
     val VIEW_BUTTON_IMG = 4
     val VIEW_PROGRESS_ING = 5
     val VIEW_TRANS_DONE = 6
+    val PREFS_NAME = "MyPrefs"
+    val SAVE_GUIDE_AGAIN = "save_guide_again"
     val TAG = "TextToSpeech"
     val MIME_TEXT = "text/plain"
     val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"

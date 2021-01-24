@@ -1,3 +1,5 @@
+// initiate views class
+
 package com.example.ocrtts
 
 import android.graphics.Color

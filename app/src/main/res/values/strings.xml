@@ -3,6 +3,6 @@
     <string name="label_fab_create_txt">파일 저장</string>
     <string name="label_fab_flush_edittxt">변환 결과 지우기</string>
     <string name="label_fab_DB">변환 기록</string>
-    <string name="adAppId">ca-app-pub-5410617757998890/4917059222</string>
-    <string name="adUnitId">변환 기록</string>
+    <string name="adAppId">ca-app-pub-5410617757998890~7096677616</string>
+    <string name="adUnitId">ca-app-pub-5410617757998890/4917059222</string>
 </resources>
