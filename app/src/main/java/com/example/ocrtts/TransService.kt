@@ -33,8 +33,8 @@ class TransService : Service() {
         builder = if (Build.VERSION.SDK_INT >= 26) {
             val CHANNEL_ID = "ocr_service_channel"
             val channel = NotificationChannel(CHANNEL_ID,
-                    "OCR Service Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT)
+                    "OCRTTS notification",
+                    NotificationManager.IMPORTANCE_NONE)
             (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
                     .createNotificationChannel(channel)
             NotificationCompat.Builder(this, CHANNEL_ID)

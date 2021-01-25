@@ -3,7 +3,6 @@
 package com.example.ocrtts
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.*
 import android.os.*
 import android.provider.MediaStore
@@ -18,6 +17,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.googlecode.tesseract.android.TessBaseAPI
+import com.leinardi.android.speeddial.SpeedDialView
 import java.io.*
 import java.util.*
 
@@ -25,120 +25,24 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     private val mainActivity = this
 
     //Model
-    var model: MyModel = MyModel()
-
-    //View
-    var views: MyView = MyView()
+    val model: MyModel = MyModel()
 
     //Control
+    val mHandler = MainHandler(mainActivity)
+
+    //View
+    val views: MyView = MyView()
     var myDBHelper: MyDatabaseOpenHelper? = null
-    var mHandler = MainHandler()
-    var mServiceMessenger: Messenger? = null
-    var mActivityMessenger: Messenger? = null
+    lateinit var mServiceMessenger: Messenger
+    lateinit var mActivityMessenger: Messenger
 
     //TTS, OCR
-    private lateinit var mTts: TextToSpeech
-
-    @SuppressLint("HandlerLeak")
-    inner class MainHandler : Handler() {
-        override fun handleMessage(msg: Message) {
-            val msgToService: Message
-
-            when (msg.what) {
-                model.VIEW_RESULT_SET -> {
-                    Log.i("VIEW_RESULT_SET", "result set ${msg.obj}")
-                    views.mEditOcrResult.append(msg.obj.toString())
-                }
-                model.VIEW_READING_STATE -> {
-                    model.readState = model.bigText.size.toString() + "문장 중 " + (model.readIndex + 1) + "번째"
-                    views.mEditReadingState.setText(model.readState)
-                }
-                model.VIEW_READ_HIGHLIGHT -> {
-                    Log.i("띠띠에스", model.readIndex.toString() + "th 문장 3 강조 들옴 charsum : " + model.charSum)
-                    views.mEditOcrResult.requestFocus()
-                    if (model.readIndex < model.bigText.size &&
-                            model.charSum + model.bigText.sentence[model.readIndex].length <= views.mEditOcrResult.length()) {
-                        Log.i("띠띠에스", model.readIndex.toString() + "th 문장 길이 : " + model.bigText.sentence[model.readIndex].length + " charsum : " + model.charSum)
-                        views.mEditOcrResult.setSelection(model.charSum, model.charSum + model.bigText.sentence[model.readIndex].length)
-                        Log.i("띠띠에스", model.readIndex.toString() + "th 문장 시작 : " + model.charSum + " 끝 : " + (model.charSum + model.bigText.sentence[model.readIndex].length))
-                    }
-                }
-                model.VIEW_RESET -> {
-                    model.readIndex = 0
-                    model.charSum = 0
-                    views.mEditOcrResult.clearFocus()
-                    model.state = "Stop"
-                    mTts.stop()
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE))
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_BUTTON_IMG)) //버튼 이미지 바꿈
-                    Log.i("띠띠에스", "리셋")
-                }
-                model.VIEW_BUTTON_IMG -> {
-                    Log.i("띠띠에스", "재생 or 일시정지 State : " + model.state + " isSpeaking : " + mTts.isSpeaking)
-                    if (model.state == "playing" && mTts.isSpeaking) views.mPlayButton.setImageResource(R.drawable.pause_states)
-                    else views.mPlayButton.setImageResource(R.drawable.play_states)
-                }
-                model.VIEW_PROGRESS_ING -> {
-                    Log.i("VIEW_PROGRESS_ING", "OCR service send")
-                    try {
-                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_PROGRESS, model.ocrIndex)
-                        msgToService.replyTo = mActivityMessenger
-                        mServiceMessenger!!.send(msgToService)
-                    } catch (e: RemoteException) {
-                        e.printStackTrace()
-                    }
-                    views.mEditOCRProgress.setText("${model.folderTotalPage} 장 중 ${model.ocrIndex} 장 변환")
-                    Log.i("VIEW_PROGRESS_ING", model.folderTotalPage.toString() + "장 중 " + model.ocrIndex + "장 변환")
-                }
-                model.VIEW_TRANS_DONE -> {
-                    Log.i("VIEW_TRANS_DONE", model.folderTotalPage.toString() + "끝?")
-
-                    try {
-                        msgToService = Message.obtain(null, TransService.VIEW_NOTIFI_DONE, model.folderTotalPage)
-                        Log.i("MSG", "service ocr index send: ${model.folderTotalPage}")
-                        msgToService.replyTo = mActivityMessenger
-                        mServiceMessenger!!.send(msgToService)
-                    } catch (e: RemoteException) {
-                        e.printStackTrace()
-                    }
-                    views.mEditOCRProgress.setText(model.folderTotalPage.toString() + "장 Done")
-                    views.mEditOcrResult.append(" ")
-                    Log.i("VIEW_TRANS_DONE", model.folderTotalPage.toString() + "끝?")
-                    model.ocrIndex = -1
-                    model.folderTotalPage = 0
-                }
-            }
-        }
-    }
-
-    val mConnection: ServiceConnection = object : ServiceConnection {
-        override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
-            var msg: Message
-            val thread = OCR(mainActivity) // OCR 진행할 스레드
-
-            mServiceMessenger = Messenger(iBinder)
-            Log.i("MSG", "onServiceConnected main send")
-            msg = Message.obtain(null, model.VIEW_PROGRESS_ING, 0)
-            mActivityMessenger!!.send(msg) //변환 과정
-            try {
-                Log.i("MSG", "onServiceConnected service send")
-                msg = Message.obtain(null, TransService.CONNECT, 0)
-                msg.replyTo = mActivityMessenger
-                mServiceMessenger!!.send(msg)
-            } catch (e: RemoteException) {
-                e.printStackTrace()
-            }
-            model.threadIndex++ //생성한 스레드 수
-            thread.isDaemon = true
-            thread.start()
-        }
-
-        override fun onServiceDisconnected(componentName: ComponentName) {}
-    }
+    lateinit var mTts: TextToSpeech
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         //저장소 권한 확인 및 요청
         Log.i("Storage permission", "쓰기 권한 : " + PermissionUtil.checkPermissions(mainActivity, Manifest.permission.WRITE_EXTERNAL_STORAGE))
         Log.i("Storage permission", "읽기 권한 : " + PermissionUtil.checkPermissions(mainActivity, Manifest.permission.READ_EXTERNAL_STORAGE))
@@ -166,139 +70,13 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         myDBHelper = MyDatabaseOpenHelper(mainActivity)
         myDBHelper!!.open()
         myDBHelper!!.create()
-        mHandler = MainHandler()
         mActivityMessenger = Messenger(mHandler)
 
         // 터치 이벤트 제거
         views.mEditOcrResult.setOnTouchListener { view, event -> true }
-        setSpeedDial()
+        views.speedDialView.setOnActionSelectedListener(selectedListener)
         Log.i("onCreate()", "Thread.currentThread().getName()" + Thread.currentThread().name)
-        setUtterListener()
-    }
-
-    private fun setSpeedDial() {
-        views.speedDialView.setOnActionSelectedListener { speedDialActionItem ->
-            when (speedDialActionItem.id) {
-                R.id.fab_write_txt -> {
-                    setFabWrite()
-                    false // true to keep the Speed Dial open
-                }
-                R.id.fab_DB -> {
-                    Log.i("fab", "클릭 fab_DB")
-                    setFabDB()
-                    false
-                }
-                R.id.fab_flush_edittxt -> {
-                    Log.i("fab", "클릭 fab_flush_edittxt")
-                    model.ocrResult = " "
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET, model.ocrResult)) //결과화면 set
-                    Toast.makeText(applicationContext, "Text cleared", Toast.LENGTH_LONG).show()
-                    false
-                }
-                else -> false
-            }
-        }
-    }
-
-    private fun setFabWrite() {
-        var checkedOption = 1
-        val writeOption = arrayOf("파일생성", "이어쓰기")
-        val fileState = TextView(mainActivity)
-        val myPref = getSharedPreferences(model.PREFS_NAME, MODE_PRIVATE)
-        val prefEdit = myPref.edit()
-
-        Log.i("fab", "클릭 fab_write_txt")
-        //대화상자 설정
-        if (model.frw.getfName() == null) fileState.hint = "저장할 파일이 없습니다."
-        else fileState.text = model.frw.getfName()
-        views.writeMADB.setTitle("파일 저장")
-                .setSingleChoiceItems(writeOption, checkedOption) { dialog, which ->
-                    checkedOption = which
-                }
-                .setPositiveButton("Ok") { dialog, which ->
-                    val intent: Intent
-
-                    when (checkedOption) {
-                        0 -> {
-                            Log.i("frw", "저장 case 0 파일생성")
-                            intent = if (model.folderMetaList.isNotEmpty()) model.frw.createFile(model.MIME_TEXT, model.folderMetaList.first().title)
-                            else model.frw.createFile(model.MIME_TEXT, "no title")
-                            startActivityForResult(intent, model.CREATE_REQUEST_CODE)
-                        }
-                        1 -> {
-                            Log.i("frw", "저장 case 1 이어쓰기")
-                            intent = model.frw.performFileSearch(model.MIME_TEXT)
-                            startActivityForResult(intent, model.EDIT_REQUEST_CODE)
-                        }
-                    }
-                }
-                .setView(fileState)
-                .show()
-        if (myPref.getBoolean("save_guide_again", true))
-            views.saveHelp.setTitle("도움말")
-                    .setMessage("변환된 파일을 저장할 수 있습니다.\n" +
-                            "저장할 파일을 선택하거나 새로 생성합니다.\n" +
-                            "어플 종료 시 결과가 선택하신 파일에 자동으로 저장됩니다.")
-                    .setNeutralButton("더 이상 보지 않기") { dialog, which ->
-                        prefEdit.putBoolean(model.SAVE_GUIDE_AGAIN, false)
-                        prefEdit.apply()
-                    }
-                    .setPositiveButton("Ok") { dialog, which ->
-                    }
-                    .show()
-    }
-
-    private fun setFabDB() {
-        val listDialogCursor = myDBHelper!!.sortColumn("title")
-        val cursor = myDBHelper!!.sortColumn("title")
-
-        listDialogCursor.moveToFirst()
-        MaterialAlertDialogBuilder(mainActivity)
-                .setTitle("변환 기록")
-                .setMultiChoiceItems(listDialogCursor, "check_bool", "title_last_page") { dialog, picked, isChekced ->
-                    Log.i("fab", "$isChekced <-isChekced  which- > $picked + 1")
-                    cursor.move(picked + 1)
-                    if (myDBHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 1))
-                        Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공")
-                    else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
-                }
-                .setPositiveButton("Ok") { dialog, which ->
-                    while (cursor.moveToNext())
-                        if (cursor.getInt(4) == 1) myDBHelper!!.deleteTuple(cursor.getInt(0).toLong(), 0)
-                }
-                .show()
-    }
-
-    private fun setUtterListener() {
-        mTts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            //음성 발성 listener
-            override fun onStart(utteranceId: String) {
-                Log.i("띠띠에스", model.readIndex.toString() + "번째null인지? : " + model.bigText.isSentenceNull(model.readIndex))
-                if (model.readIndex < model.bigText.size) {
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READ_HIGHLIGHT, 0))
-                } else {
-                    Log.i("띠띠에스", "완독start")
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESET, 0))
-                }
-                Log.i("띠띠에스", "ReadIndex: " + model.readIndex + " 빅텍 Sentence:  @@" + model.bigText.sentence[model.readIndex] + "@@")
-            }
-
-            override fun onDone(utteranceId: String) {
-                model.charSum += model.bigText.sentence[model.readIndex].length
-                Log.i("띠띠에스", "이야 다 시부렸어라")
-                mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
-                model.readIndex++
-                if (model.readIndex < model.bigText.size) mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id") else {
-                    Log.i("띠띠에스", "완독done")
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESET, 0))
-                }
-            }
-
-            override fun onError(utteranceId: String) {
-                Log.e("띠띠에스", "Fuck you")
-            }
-        })
+        mTts.setOnUtteranceProgressListener(utterListener)
     }
 
     override fun onClick(src: View) {
@@ -375,6 +153,202 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         }
     }
 
+    @Synchronized
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        Log.i("onActivityResult", "resultCode: $resultCode")
+        if (resultCode == RESULT_OK) {
+            Log.i("onActivityResult", "requestCode: $requestCode")
+            if (requestCode == model.PICTURE_REQUEST_CODE && data != null) {
+                // picked image list allocate
+                val folder: FolderMeta
+
+                model.folderMetaList.add(FolderMeta())
+                folder = model.folderMetaList.first()
+                if (data.data != null) {
+                    // 이미지 한 장만 선택했을 때
+                    folder.uriList.add(data.data!!)
+                    Log.i("DB", "clipData : " + folder.uriList)
+                } else if (data.clipData != null)
+                    for (i in 0 until data.clipData!!.itemCount)
+                        folder.uriList.add(data.clipData!!.getItemAt(i).uri)
+                model.runOCR(mainActivity)
+            }
+            else if (requestCode == model.CREATE_REQUEST_CODE || requestCode == model.EDIT_REQUEST_CODE) {
+                if (data != null) {
+                    var pathStr = ""
+                    val pathArray: Array<String>
+
+                    model.safUri = data.data
+                    Log.i("DB", "SAFUri: " + model.safUri)
+                    Log.i("DB", "SAFUri.getPath: " + model.safUri!!.path)
+                    Log.i("DB", "uri: " + model.safUri)
+                    contentResolver.query(model.safUri!!, null, null, null, null)
+                            .use { cursor ->
+                                if (BuildConfig.DEBUG && cursor == null) error("Assertion failed")
+                                if (cursor!!.moveToFirst()) {
+                                    Log.i("DB", "OpenableColumns.DISPLAY_NAME: " + OpenableColumns.DISPLAY_NAME)
+                                    pathStr = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
+                                    Log.i("DB", "pathStr: $pathStr")
+                                }
+                            }
+                    pathArray = pathStr.split("/".toRegex()).toTypedArray()
+                    Log.i("DB", "선택한 파일 경로 $pathStr")
+                    model.frw.setfName(pathArray[pathArray.size - 1])
+                } else Log.i("onActivityResult", "data가 null")
+            }
+        }
+    }
+
+    // Listener
+    private val selectedListener = SpeedDialView.OnActionSelectedListener { speedDialActionItem ->
+        when (speedDialActionItem.id) {
+            R.id.fab_write_txt -> {
+                setFabWrite()
+                false // true to keep the Speed Dial open
+            }
+            R.id.fab_DB -> {
+                Log.i("fab", "클릭 fab_DB")
+                setFabDB()
+                false
+            }
+            R.id.fab_flush_edittxt -> {
+                Log.i("fab", "클릭 fab_flush_edittxt")
+                model.ocrResult = " "
+                mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET, model.ocrResult)) //결과화면 set
+                Toast.makeText(applicationContext, "Text cleared", Toast.LENGTH_LONG).show()
+                false
+            }
+            else -> false
+        }
+    }
+
+    private val utterListener = object : UtteranceProgressListener() {
+        //음성 발성 listener
+        override fun onStart(utteranceId: String) {
+            Log.i("띠띠에스", model.readIndex.toString() + "번째null인지? : " + model.bigText.isSentenceNull(model.readIndex))
+            if (model.readIndex < model.bigText.size) {
+                mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
+                mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READ_HIGHLIGHT, 0))
+            } else {
+                Log.i("띠띠에스", "완독start")
+                mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESET, 0))
+            }
+            Log.i("띠띠에스", "ReadIndex: " + model.readIndex + " 빅텍 Sentence:  @@" + model.bigText.sentence[model.readIndex] + "@@")
+        }
+
+        override fun onDone(utteranceId: String) {
+            model.charSum += model.bigText.sentence[model.readIndex].length
+            Log.i("띠띠에스", "이야 다 시부렸어라")
+            mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
+            model.readIndex++
+            if (model.readIndex < model.bigText.size) mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id") else {
+                Log.i("띠띠에스", "완독done")
+                mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESET, 0))
+            }
+        }
+
+        override fun onError(utteranceId: String) {
+            Log.e("띠띠에스", "Fuck you")
+        }
+    }
+
+    val mConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
+            var msg: Message
+            val thread = OCR(mainActivity) // OCR 진행할 스레드
+
+            mServiceMessenger = Messenger(iBinder)
+            Log.i("MSG", "onServiceConnected main send")
+            msg = Message.obtain(null, model.VIEW_PROGRESS_ING, 0)
+            mActivityMessenger.send(msg) //변환 과정
+            try {
+                Log.i("MSG", "onServiceConnected service send")
+                msg = Message.obtain(null, TransService.CONNECT, 0)
+                msg.replyTo = mActivityMessenger
+                mServiceMessenger.send(msg)
+            } catch (e: RemoteException) {
+                e.printStackTrace()
+            }
+            model.threadIndex++ //생성한 스레드 수
+            thread.isDaemon = true
+            thread.start()
+        }
+
+        override fun onServiceDisconnected(componentName: ComponentName) {}
+    }
+
+    // selectedListener sub method
+    private fun setFabWrite() {
+        var checkedOption = 1
+        val writeOption = arrayOf("파일생성", "이어쓰기")
+        val fileState = TextView(mainActivity)
+        val myPref = getSharedPreferences(model.PREFS_NAME, MODE_PRIVATE)
+        val prefEdit = myPref.edit()
+
+        Log.i("fab", "클릭 fab_write_txt")
+        //대화상자 설정
+        if (model.frw.getfName() == null) fileState.hint = "저장할 파일이 없습니다."
+        else fileState.text = model.frw.getfName()
+        views.writeMADB.setTitle("파일 저장")
+                .setSingleChoiceItems(writeOption, checkedOption) { dialog, which ->
+                    checkedOption = which
+                }
+                .setPositiveButton("Ok") { dialog, which ->
+                    val intent: Intent
+
+                    when (checkedOption) {
+                        0 -> {
+                            Log.i("frw", "저장 case 0 파일생성")
+                            intent = if (model.folderMetaList.isNotEmpty()) model.frw.createFile(model.MIME_TEXT, model.folderMetaList.first().title)
+                            else model.frw.createFile(model.MIME_TEXT, "no title")
+                            startActivityForResult(intent, model.CREATE_REQUEST_CODE)
+                        }
+                        1 -> {
+                            Log.i("frw", "저장 case 1 이어쓰기")
+                            intent = model.frw.performFileSearch(model.MIME_TEXT)
+                            startActivityForResult(intent, model.EDIT_REQUEST_CODE)
+                        }
+                    }
+                }
+                .setView(fileState)
+                .show()
+        if (myPref.getBoolean("save_guide_again", true))
+            views.saveHelp.setTitle("도움말")
+                    .setMessage("변환된 파일을 저장할 수 있습니다.\n" +
+                            "저장할 파일을 선택하거나 새로 생성합니다.\n" +
+                            "어플 종료 시 결과가 선택하신 파일에 자동으로 저장됩니다.")
+                    .setNeutralButton("더 이상 보지 않기") { dialog, which ->
+                        prefEdit.putBoolean(model.SAVE_GUIDE_AGAIN, false)
+                        prefEdit.apply()
+                    }
+                    .setPositiveButton("Ok") { dialog, which ->
+                    }
+                    .show()
+    }
+
+    private fun setFabDB() {
+        val listDialogCursor = myDBHelper!!.sortColumn("title")
+        val cursor = myDBHelper!!.sortColumn("title")
+
+        listDialogCursor.moveToFirst()
+        MaterialAlertDialogBuilder(mainActivity)
+                .setTitle("변환 기록")
+                .setMultiChoiceItems(listDialogCursor, "check_bool", "title_last_page") { dialog, picked, isChekced ->
+                    Log.i("fab", "$isChekced <-isChekced  which- > $picked + 1")
+                    cursor.move(picked + 1)
+                    if (myDBHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 1))
+                        Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공")
+                    else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
+                }
+                .setPositiveButton("Ok") { dialog, which ->
+                    while (cursor.moveToNext())
+                        if (cursor.getInt(4) == 1) myDBHelper!!.deleteTuple(cursor.getInt(0).toLong(), 0)
+                }
+                .show()
+    }
+
+    // onClick sub method
     private fun albumClick() {
         val writeOption = arrayOf("직접 선택(680장 이하)", "폴더 단위로 변환")
         var checkedOption = 1
@@ -452,53 +426,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 .show()
     }
 
-    @Synchronized
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        Log.i("onActivityResult", "resultCode: $resultCode")
-        if (resultCode == RESULT_OK) {
-            Log.i("onActivityResult", "requestCode: $requestCode")
-            if (requestCode == model.PICTURE_REQUEST_CODE && data != null) {
-                // picked image list allocate
-                val folder: FolderMeta
-
-                model.folderMetaList.add(FolderMeta())
-                folder = model.folderMetaList.first()
-                if (data.data != null) {
-                    // 이미지 한 장만 선택했을 때
-                    folder.uriList.add(data.data!!)
-                    Log.i("DB", "clipData : " + folder.uriList)
-                } else if (data.clipData != null)
-                    for (i in 0 until data.clipData!!.itemCount)
-                        folder.uriList.add(data.clipData!!.getItemAt(i).uri)
-                model.runOCR(mainActivity)
-            }
-            else if (requestCode == model.CREATE_REQUEST_CODE || requestCode == model.EDIT_REQUEST_CODE) {
-                if (data != null) {
-                    var pathStr = ""
-                    val pathArray: Array<String>
-
-                    model.safUri = data.data
-                    Log.i("DB", "SAFUri: " + model.safUri)
-                    Log.i("DB", "SAFUri.getPath: " + model.safUri!!.path)
-                    Log.i("DB", "uri: " + model.safUri)
-                    contentResolver.query(model.safUri!!, null, null, null, null)
-                            .use { cursor ->
-                                if (BuildConfig.DEBUG && cursor == null) error("Assertion failed")
-                                if (cursor!!.moveToFirst()) {
-                                    Log.i("DB", "OpenableColumns.DISPLAY_NAME: " + OpenableColumns.DISPLAY_NAME)
-                                    pathStr = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
-                                    Log.i("DB", "pathStr: $pathStr")
-                                }
-                            }
-                    pathArray = pathStr.split("/".toRegex()).toTypedArray()
-                    Log.i("DB", "선택한 파일 경로 $pathStr")
-                    model.frw.setfName(pathArray[pathArray.size - 1])
-                } else Log.i("onActivityResult", "data가 null")
-            }
-        }
-    }
-
+    // onDestroy sub method
     private fun setBookTable() {
         for (f in model.folderMetaList) {
             if (f.saverPermit) {
@@ -518,6 +446,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         }
     }
 
+    // onCreate sub method
     private fun checkFile(dir: File): Boolean {
         //디렉토리가 없으면 디렉토리를 만들고 그후에 파일을 카피
         if (!dir.exists() && dir.mkdirs()) copyFiles()
@@ -551,6 +480,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         }
     }
 
+    // service terminate
     fun terminateService() {
         Log.i("Service", "terminateService called is bound? ${model.mIsBound}")
         if (model.mIsBound) {
@@ -558,7 +488,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
 
             Log.i("DB", "now service will terminate")
             try {
-                mServiceMessenger!!.send(msg)
+                mServiceMessenger.send(msg)
             } catch (e: RemoteException) {
                 e.printStackTrace()
             }
@@ -567,6 +497,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         }
     }
 
+    // Activity life cycle
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             val result = mTts.setLanguage(Locale.KOREAN)
