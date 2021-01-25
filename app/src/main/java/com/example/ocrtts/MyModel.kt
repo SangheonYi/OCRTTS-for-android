@@ -58,12 +58,12 @@ class MyModel internal constructor() {
     var mIsBound = false
 
     private fun setFolderMeta(folder: FolderMeta, main: MainActivity): Int {
-        folder.page = main.myDBOpenHelper!!.getContinuePage(folder.title)
+        folder.page = main.myDBHelper!!.getContinuePage(folder.title)
         Log.i("runOCR", "선택한 폴더(책 제목) : " + folder.title)
         folder.pickedNumber = folder.uriList.size
         folder.folderTotalPages += folder.pickedNumber - folder.page
         folderTotalPage += folder.folderTotalPages
-        if (main.myDBOpenHelper!!.isNewTitle(folder.title)) {
+        if (main.myDBHelper!!.isNewTitle(folder.title)) {
             folder.isPageUpdated = false
             Toast.makeText(main, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
         } else if (folder.page < folder.pickedNumber) {

@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     var views: MyView = MyView()
 
     //Control
-    var myDBOpenHelper: MyDatabaseOpenHelper? = null
+    var myDBHelper: MyDatabaseOpenHelper? = null
     var mHandler = MainHandler()
     var mServiceMessenger: Messenger? = null
     var mActivityMessenger: Messenger? = null
@@ -163,9 +163,9 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             model.sTess!!.init(model.dataPath, model.lang)
 
         //데이터 관리
-        myDBOpenHelper = MyDatabaseOpenHelper(mainActivity)
-        myDBOpenHelper!!.open()
-        myDBOpenHelper!!.create()
+        myDBHelper = MyDatabaseOpenHelper(mainActivity)
+        myDBHelper!!.open()
+        myDBHelper!!.create()
         mHandler = MainHandler()
         mActivityMessenger = Messenger(mHandler)
 
@@ -173,6 +173,103 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         views.mEditOcrResult.setOnTouchListener { view, event -> true }
         setSpeedDial()
         Log.i("onCreate()", "Thread.currentThread().getName()" + Thread.currentThread().name)
+        setUtterListener()
+    }
+
+    private fun setSpeedDial() {
+        views.speedDialView.setOnActionSelectedListener { speedDialActionItem ->
+            when (speedDialActionItem.id) {
+                R.id.fab_write_txt -> {
+                    setFabWrite()
+                    false // true to keep the Speed Dial open
+                }
+                R.id.fab_DB -> {
+                    Log.i("fab", "클릭 fab_DB")
+                    setFabDB()
+                    false
+                }
+                R.id.fab_flush_edittxt -> {
+                    Log.i("fab", "클릭 fab_flush_edittxt")
+                    model.ocrResult = " "
+                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET, model.ocrResult)) //결과화면 set
+                    Toast.makeText(applicationContext, "Text cleared", Toast.LENGTH_LONG).show()
+                    false
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun setFabWrite() {
+        var checkedOption = 1
+        val writeOption = arrayOf("파일생성", "이어쓰기")
+        val fileState = TextView(mainActivity)
+        val myPref = getSharedPreferences(model.PREFS_NAME, MODE_PRIVATE)
+        val prefEdit = myPref.edit()
+
+        Log.i("fab", "클릭 fab_write_txt")
+        //대화상자 설정
+        if (model.frw.getfName() == null) fileState.hint = "저장할 파일이 없습니다."
+        else fileState.text = model.frw.getfName()
+        views.writeMADB.setTitle("파일 저장")
+                .setSingleChoiceItems(writeOption, checkedOption) { dialog, which ->
+                    checkedOption = which
+                }
+                .setPositiveButton("Ok") { dialog, which ->
+                    val intent: Intent
+
+                    when (checkedOption) {
+                        0 -> {
+                            Log.i("frw", "저장 case 0 파일생성")
+                            intent = if (model.folderMetaList.isNotEmpty()) model.frw.createFile(model.MIME_TEXT, model.folderMetaList.first().title)
+                            else model.frw.createFile(model.MIME_TEXT, "no title")
+                            startActivityForResult(intent, model.CREATE_REQUEST_CODE)
+                        }
+                        1 -> {
+                            Log.i("frw", "저장 case 1 이어쓰기")
+                            intent = model.frw.performFileSearch(model.MIME_TEXT)
+                            startActivityForResult(intent, model.EDIT_REQUEST_CODE)
+                        }
+                    }
+                }
+                .setView(fileState)
+                .show()
+        if (myPref.getBoolean("save_guide_again", true))
+            views.saveHelp.setTitle("도움말")
+                    .setMessage("변환된 파일을 저장할 수 있습니다.\n" +
+                            "저장할 파일을 선택하거나 새로 생성합니다.\n" +
+                            "어플 종료 시 결과가 선택하신 파일에 자동으로 저장됩니다.")
+                    .setNeutralButton("더 이상 보지 않기") { dialog, which ->
+                        prefEdit.putBoolean(model.SAVE_GUIDE_AGAIN, false)
+                        prefEdit.apply()
+                    }
+                    .setPositiveButton("Ok") { dialog, which ->
+                    }
+                    .show()
+    }
+
+    private fun setFabDB() {
+        val listDialogCursor = myDBHelper!!.sortColumn("title")
+        val cursor = myDBHelper!!.sortColumn("title")
+
+        listDialogCursor.moveToFirst()
+        MaterialAlertDialogBuilder(mainActivity)
+                .setTitle("변환 기록")
+                .setMultiChoiceItems(listDialogCursor, "check_bool", "title_last_page") { dialog, picked, isChekced ->
+                    Log.i("fab", "$isChekced <-isChekced  which- > $picked + 1")
+                    cursor.move(picked + 1)
+                    if (myDBHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 1))
+                        Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공")
+                    else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
+                }
+                .setPositiveButton("Ok") { dialog, which ->
+                    while (cursor.moveToNext())
+                        if (cursor.getInt(4) == 1) myDBHelper!!.deleteTuple(cursor.getInt(0).toLong(), 0)
+                }
+                .show()
+    }
+
+    private fun setUtterListener() {
         mTts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             //음성 발성 listener
             override fun onStart(utteranceId: String) {
@@ -202,103 +299,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 Log.e("띠띠에스", "Fuck you")
             }
         })
-    }
-
-    private fun setSpeedDial() {
-        views.speedDialView.setOnActionSelectedListener { speedDialActionItem ->
-            when (speedDialActionItem.id) {
-                R.id.fab_write_txt -> {
-                    var checkedOption = 1
-                    val writeOption = arrayOf("파일생성", "이어쓰기")
-                    val popOption = arrayOf("더 이상 보지 않기", "아ㅏㅏ")
-                    val fileState = TextView(mainActivity)
-                    val myPref = getSharedPreferences(model.PREFS_NAME, MODE_PRIVATE)
-                    val prefEdit = myPref.edit()
-
-                    Log.i("fab", "클릭 fab_write_txt")
-                    //대화상자 설정
-                    if (model.frw.getfName() == null) fileState.hint = "저장할 파일이 없습니다."
-                    else fileState.text = model.frw.getfName()
-                    views.writeMADB.setTitle("파일 저장")
-                            .setSingleChoiceItems(writeOption, checkedOption) { dialog, which ->
-                                checkedOption = which
-                            }
-                            .setPositiveButton("Ok") { dialog, which ->
-                                val intent: Intent
-
-                                when (checkedOption) {
-                                    0 -> {
-                                        Log.i("frw", "저장 case 0 파일생성")
-                                        intent = if (model.folderMetaList.isNotEmpty()) model.frw.createFile(model.MIME_TEXT, model.folderMetaList.first().title)
-                                        else model.frw.createFile(model.MIME_TEXT, "no title")
-                                        startActivityForResult(intent, model.CREATE_REQUEST_CODE)
-                                    }
-                                    1 -> {
-                                        Log.i("frw", "저장 case 1 이어쓰기")
-                                        intent = model.frw.performFileSearch(model.MIME_TEXT)
-                                        startActivityForResult(intent, model.EDIT_REQUEST_CODE)
-                                    }
-                                }
-                            }
-                            .setView(fileState)
-                            .show()
-                    if (myPref.getBoolean("save_guide_again", true))
-                    views.saveHelp.setTitle("도움말")
-                            .setMessage("변환된 파일을 저장할 수 있습니다.\n" +
-                                    "저장할 파일을 선택하거나 새로 생성합니다.\n" +
-                                    "어플 종료 시 결과가 선택하신 파일에 자동으로 저장됩니다.")
-                            .setNeutralButton("더 이상 보지 않기") { dialog, which ->
-                                prefEdit.putBoolean(model.SAVE_GUIDE_AGAIN, false)
-                                prefEdit.apply()
-                            }
-                            .setPositiveButton("Ok") { dialog, which ->
-                            }
-                            .show()
-                    false // true to keep the Speed Dial open
-                }
-                R.id.fab_DB -> {
-                    Log.i("fab", "클릭 fab_DB")
-                    val listDialogCursor = myDBOpenHelper!!.sortColumn("title")
-
-                    listDialogCursor.moveToFirst()
-                    MaterialAlertDialogBuilder(mainActivity)
-                            .setTitle("변환 기록")
-                            .setMultiChoiceItems(listDialogCursor, "check_bool", "title_last_page") { dialog, picked, isChekced ->
-                                var which = picked
-                                which++
-                                Log.i("fab", "$isChekced <-isChekced  which- > $which")
-                                val cursor = myDBOpenHelper!!.sortColumn("title")
-
-                                cursor.move(which)
-                                if (isChekced) {
-                                    if (myDBOpenHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 1))
-                                        Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공")
-                                    else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
-                                } else {
-                                    if (myDBOpenHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 0))
-                                        Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "성공")
-                                    else Log.i("fab", isChekced.toString() + " 변환기록 check " + cursor.getInt(4) + "실패")
-                                }
-                            }
-                            .setPositiveButton("Ok") { dialog, which ->
-                                val cursor = myDBOpenHelper!!.sortColumn("title")
-
-                                while (cursor.moveToNext())
-                                    if (cursor.getInt(4) == 1) myDBOpenHelper!!.deleteTuple(cursor.getInt(0).toLong(), 0)
-                            }
-                            .show()
-                    false
-                }
-                R.id.fab_flush_edittxt -> {
-                    Log.i("fab", "클릭 fab_flush_edittxt")
-                    model.ocrResult = " "
-                    mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESULT_SET, model.ocrResult)) //결과화면 set
-                    Toast.makeText(applicationContext, "Text cleared", Toast.LENGTH_LONG).show()
-                    false
-                }
-                else -> false
-            }
-        }
     }
 
     override fun onClick(src: View) {
@@ -504,13 +504,13 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             if (f.saverPermit) {
                 if (!f.isPageUpdated) f.isPageUpdated = true
                 f.titleLastPage = """${f.title}Page: ${f.page}""".trimIndent()
-                myDBOpenHelper!!.open()
-                if (model.threadIndex > 0 && myDBOpenHelper!!.isNewTitle(f.title)) {
-                    if (myDBOpenHelper!!.insertColumn(f.title, f.page.toLong(), f.titleLastPage, 0) != -1L)
+                myDBHelper!!.open()
+                if (model.threadIndex > 0 && myDBHelper!!.isNewTitle(f.title)) {
+                    if (myDBHelper!!.insertColumn(f.title, f.page.toLong(), f.titleLastPage, 0) != -1L)
                         Log.i("setBookTable", "DB에 삽입됨 : " + f.title + "  " + f.page)
                     else Log.i("setBookTable", "DB에 삽입 에러 -1 : " + f.title + "  " + f.page)
-                } else if (model.threadIndex > 0 && !myDBOpenHelper!!.isNewTitle(f.title)) {
-                    if (myDBOpenHelper!!.updateColumn(myDBOpenHelper!!.getIdByTitle(f.title), f.title, f.page.toLong(), f.titleLastPage, 0))
+                } else if (model.threadIndex > 0 && !myDBHelper!!.isNewTitle(f.title)) {
+                    if (myDBHelper!!.updateColumn(myDBHelper!!.getIdByTitle(f.title), f.title, f.page.toLong(), f.titleLastPage, 0))
                         Log.i("setBookTable", "DB 갱신 됨 : " + f.title + "  " + f.page)
                     else Log.i("setBookTable", "DB 갱신 실패 updateColumn <= 0 : " + f.title + "  " + f.page)
                 }
