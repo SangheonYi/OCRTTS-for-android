@@ -1,6 +1,6 @@
 // set variables, run ocr
 
-package com.example.ocrtts
+package com.example.sayiocr
 
 import android.content.Intent
 import android.net.Uri

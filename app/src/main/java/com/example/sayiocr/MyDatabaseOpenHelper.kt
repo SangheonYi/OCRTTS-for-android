@@ -1,4 +1,4 @@
-package com.example.ocrtts
+package com.example.sayiocr
 
 import android.content.ContentValues
 import android.content.Context

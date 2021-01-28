@@ -1,4 +1,4 @@
-package com.example.ocrtts;
+package com.example.sayiocr;
 
 import android.app.Activity;
 import android.content.Intent;

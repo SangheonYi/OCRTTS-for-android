@@ -51,7 +51,7 @@ dependencies {
     testImplementation 'junit:junit:4.13'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-    implementation files('libs/tesseract4android-2.0.0.aar')
+    implementation 'cz.adaptech.android:tesseract4android:2.1.0'
     implementation files('libs/URIUtil-1.0-release.aar')
 
     implementation 'com.github.javiersantos:MaterialStyledDialogs:3.0.1'

@@ -1,4 +1,4 @@
-package com.example.ocrtts
+package com.example.sayiocr
 
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
