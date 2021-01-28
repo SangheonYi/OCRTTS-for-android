@@ -19,14 +19,14 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="@string/adAppId"/>
-        <activity android:name="com.example.sayiocr.MainActivity">
+        <activity android:name="com.example.sayiocr.com.sayi.sayiocr.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name="com.example.sayiocr.TransService"
+        <service android:name="com.example.sayiocr.com.sayi.sayiocr.TransService"
             android:enabled="true"
             android:exported="false"/>
     </application>
