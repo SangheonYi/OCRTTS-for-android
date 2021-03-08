@@ -58,8 +58,6 @@ class MyDatabaseOpenHelper(private val mCtx: Context) {
         values.put(DataBases.CreateDB.LAST_PAGE, last_page)
         values.put(DataBases.CreateDB.VIEW_DATA, title_last_page)
         values.put(DataBases.CreateDB.CHECK_BOOL, check_bool)
-        Log.i("DB", " mDB.update(DataBases.CreateDB._TABLENAME0, values, \"_id=\" + id, null) :  " + mDB!!.update(DataBases.CreateDB._TABLENAME0, values, "_id=$id", null))
-        Log.i("DB", " mDB.update(DataBases.CreateDB._TABLENAME0, values, \"_id=\" + id, null) :  id:: $id  title:: $title  last_page:: $last_page  title_last_page:: $title_last_page  check_bool:: $check_bool")
         return mDB!!.update(DataBases.CreateDB._TABLENAME0, values, "_id=$id", null) > 0
     }
 
@@ -88,13 +86,10 @@ class MyDatabaseOpenHelper(private val mCtx: Context) {
         val cursor = getCursorByTitle(title)
         while (cursor.moveToNext()) {
             dbTitle = cursor.getString(1)
-            Log.i("DB", "DB에서 cursor.getString(1) : " + dbTitle + " cursor.getString(1) : " + cursor.getString(2) + " pathArray[pathArray.length-2] : " + title)
         }
         if (dbTitle == title) {
-            Log.i("DB", "isNew에서 false ")
             return false
         }
-        Log.i("DB", "isNew에서 True ")
         return true
     }
 
@@ -103,9 +98,7 @@ class MyDatabaseOpenHelper(private val mCtx: Context) {
         val cursor = getCursorByTitle(title)
         while (cursor.moveToNext()) {
             if (cursor.getInt(2) >= 0) pageIndex = cursor.getInt(2)
-            Log.i("DB", "DB에서 뽑은 값 $pageIndex")
         }
-        Log.i("DB", "getContinuePage에서 return $pageIndex")
         return pageIndex
     }
 
@@ -114,7 +107,6 @@ class MyDatabaseOpenHelper(private val mCtx: Context) {
         val cursor = getCursorByTitle(title)
         while (cursor.moveToNext()) {
             if (cursor.getInt(2) >= 0) id = cursor.getInt(0).toLong()
-            Log.i("DB", "getIdByTitle에서 뽑은 값 $id")
         }
         return id
     }

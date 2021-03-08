@@ -59,7 +59,6 @@ class MyModel internal constructor() {
 
     private fun setFolderMeta(folder: FolderMeta, main: MainActivity): Int {
         folder.page = main.myDBHelper!!.getContinuePage(folder.title)
-        Log.i("runOCR", "선택한 폴더(책 제목) : " + folder.title)
         folder.pickedNumber = folder.uriList.size
         folder.folderTotalPages += folder.pickedNumber - folder.page
         folderTotalPage += folder.folderTotalPages
