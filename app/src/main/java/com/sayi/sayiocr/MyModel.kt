@@ -78,10 +78,10 @@ class MyModel internal constructor() {
         val intent: Intent
         var validCnt = 0
 
-        ocrIndex = 0
         // image meta data parsing
         for (f in folderMetaList) validCnt += setFolderMeta(f, main)
         if (0 < validCnt) {
+            ocrIndex = 0
             intent = Intent(main, TransService::class.java).putExtra("pageNum", folderTotalPage)
             mIsBound = main.bindService(intent, main.mConnection, AppCompatActivity.BIND_AUTO_CREATE)
         }
