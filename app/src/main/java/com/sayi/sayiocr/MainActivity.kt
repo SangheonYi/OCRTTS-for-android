@@ -78,6 +78,18 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         views.speedDialView.setOnActionSelectedListener(selectedListener)
         Log.i("onCreate()", "Thread.currentThread().getName()" + Thread.currentThread().name)
         mTts.setOnUtteranceProgressListener(utterListener)
+        // 변환 로그
+        val file = File("${filesDir}/test.txt")
+
+        val reader = file.bufferedReader()
+        val iterator = reader.lineSequence().iterator()
+
+        val content = StringBuffer()
+        while(iterator.hasNext()) {
+            content.append("${iterator.next()}\n")
+        }
+        reader.close()
+        views.mEditOcrResult.setText(content)
     }
 
     override fun onClick(src: View) {
@@ -266,7 +278,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 Log.i("MSG", "onServiceConnected service send")
                 msg = Message.obtain(null, TransService.CONNECT, 0)
                 msg.replyTo = mActivityMessenger
-                mServiceMessenger.send(msg)
+                if (mServiceMessenger != null) mServiceMessenger.send(msg)
             } catch (e: RemoteException) {
                 e.printStackTrace()
             }
