@@ -298,7 +298,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         val myPref = getSharedPreferences(model.PREFS_NAME, MODE_PRIVATE)
         val prefEdit = myPref.edit()
 
-        Log.i("fab", "클릭 fab_write_txt")
+        Log.i("fab", "setFabWrite")
         //대화상자 설정
         if (model.frw.getfName() == null) fileState.hint = "저장할 파일이 없습니다."
         else fileState.text = model.frw.getfName()
@@ -422,16 +422,12 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                         projection = arrayOf(MediaStore.Images.ImageColumns._ID, model.mediaFolder)
                         cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                                 projection, model.mediaFolder + " = ?", arrayOf(e), model.sortOrder)
-                        Log.i("folder pick", "colname " + cursor!!.columnNames.contentToString())
                         while (cursor!!.moveToNext()) {
+                            //TODO add from recorded page
                             folder.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID))))
-                            Log.i("folder pick", "uri add: ${
-                                ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID)))
-                            }")
                         }
                         cursor!!.moveToFirst()
                         folder.title = cursor!!.getString(cursor!!.getColumnIndex(model.mediaFolder))
-                        Log.i("folder pick", "list size: ${folder.uriList.size}")
                     }
                     model.runOCR(mainActivity)
                 }

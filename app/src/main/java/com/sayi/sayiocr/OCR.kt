@@ -28,9 +28,10 @@ class OCR(inMain: MainActivity)  // 초기화 작업
     @kotlin.time.ExperimentalTime
     @Synchronized
     override fun run() {
+        Log.i("OCR", model.threadIndex.toString() + "번째 스레드의 run")
         for (f in model.folderMetaList) {
-            Log.i("OCR", model.threadIndex.toString() + "번째 스레드의 run")
-            model.ocrIndex += f.page
+            Log.i("OCR", "${f.title} trans")
+//            model.ocrIndex += f.page
             f.saverPermit = true
             ocrTrans(f)
             f.uriList.clear()
@@ -51,7 +52,7 @@ class OCR(inMain: MainActivity)  // 초기화 작업
         val bufferRemover = BufferedWriter(remover)
         bufferRemover.write("")
         bufferRemover.close()
-        while (folder.page < folder.pickedNumber) {
+        while (folder.page < folder.uriList.size) {
             val ocrDuration = measureTime{
 
             image = getCapturedImage(folder.uriList[folder.page])
@@ -61,7 +62,7 @@ class OCR(inMain: MainActivity)  // 초기화 작업
             transResult = model.sTess!!.utF8Text
             model.bigText.addSentence(transResult)
             Log.i("MSG", "OCR trans done $transResult")
-            if (model.ocrIndex < folder.folderTotalPages)
+            if (model.ocrIndex < folder.uriList.size)
                 main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_PROGRESS_ING)) //변환 과정
             main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_RESULT_SET, transResult)) //결과 화면 set
             if (model.state == "playing") main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_READ_HIGHLIGHT)) //읽는 중일 시 강조
