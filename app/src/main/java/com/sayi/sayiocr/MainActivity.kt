@@ -367,6 +367,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
 
         Log.i("fab", "클릭 fab_write_txt")
         //대화상자 설정
+        model.folderMetaList.clear()
         views.albumMADB.setTitle("이미지 가져오기")
                 .setSingleChoiceItems(writeOption, checkedOption)
                 { dialog, which -> checkedOption = which }
