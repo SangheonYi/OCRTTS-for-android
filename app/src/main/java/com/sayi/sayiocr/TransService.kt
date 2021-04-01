@@ -13,6 +13,7 @@ import com.example.sayiocr.R
 
 class TransService : Service() {
     var totalPageNum = 0
+    val TAG = "Translated images log DB"
 
     //Messenger
     var mActivityMessenger: Messenger? = null
@@ -24,7 +25,6 @@ class TransService : Service() {
     var notifiManagerCompat: NotificationManagerCompat? = null
 
     override fun onCreate() {
-        Log.d("TransService cycle", "onCreate()")
         super.onCreate()
         startForegroundService()
     }
@@ -43,8 +43,8 @@ class TransService : Service() {
         builder!!.setSmallIcon(R.mipmap.ic_launcher)
                 .setProgress(totalPageNum, 0, false)
                 .setContentText("0 / $totalPageNum").color = resources.getColor(R.color.colorPrimary)
-        Log.i("TransService cycle", "onStartCommand()")
-        Log.i("TransService", "Thread.currentThread().getName()" + Thread.currentThread().name)
+        
+        
         startForeground(notificationId, builder!!.build())
     }
 
@@ -53,25 +53,16 @@ class TransService : Service() {
         @SuppressLint("RestrictedApi")
         override fun handleMessage(msg: Message) {
             when (msg.what) {
-                CONNECT -> {
-                    mActivityMessenger = msg.replyTo
-                    Log.i("serviceHandler", "CONNECT to " + msg.replyTo)
-                }
-                DISCONNECT -> {
-                    mActivityMessenger = null
-                    Log.i("serviceHandler", "DISCONNECT")
-                }
+                CONNECT -> mActivityMessenger = msg.replyTo
+                DISCONNECT -> mActivityMessenger = null
                 VIEW_NOTIFI_PROGRESS -> {
                     builder!!.setProgress(totalPageNum, msg.obj.toString().toInt(), false)
                             .setContentText(msg.obj.toString() + " / " + totalPageNum)
-                    Log.i("MSG", "service msg arg1 receive: ${msg.obj}")
                     notifiManagerCompat!!.notify(notificationId, builder!!.build())
-                    Log.i("serviceHandler", "VIEW_NOTIFI_PROGRESS: " + totalPageNum + "장 중 " + msg.obj + "장 변환")
                 }
                 VIEW_NOTIFI_DONE -> {
                     notifiManagerCompat!!.cancel(notificationId)
                     stopForeground(true)
-                    Log.i("serviceHandler", "VIEW_NOTIFI_DONE: " + msg.obj + "끝?")
                 }
             }
         }
@@ -79,13 +70,7 @@ class TransService : Service() {
 
     override fun onBind(intent: Intent): IBinder? {
         totalPageNum = intent.getIntExtra("pageNum", totalPageNum)
-        Log.i("TransService cycle", "onBind()")
         return mServiceMessenger.binder
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.i("TransService cycle", "onDestroy()")
     }
 
     companion object {
