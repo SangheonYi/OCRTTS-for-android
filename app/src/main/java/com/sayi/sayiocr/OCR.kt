@@ -28,7 +28,6 @@ class OCR(inMain: MainActivity)  // 초기화 작업
     @kotlin.time.ExperimentalTime
     @Synchronized
     override fun run() {
-        Log.i("OCR", model.threadIndex.toString() + "번째 스레드의 run")
         for (f in model.folderMetaList) {
             Log.i("OCR", "${f.title} trans")
             f.saverPermit = true
@@ -58,7 +57,6 @@ class OCR(inMain: MainActivity)  // 초기화 작업
             folder.page++
             transResult = model.sTess!!.utF8Text
             model.bigText.addSentence(transResult)
-            Log.i("MSG", "OCR trans done $transResult")
             if (model.ocrIndex < folder.uriList.size)
                 main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_PROGRESS_ING)) //변환 과정
             main.mHandler.sendMessage(Message.obtain(main.mHandler, model.VIEW_RESULT_SET, transResult)) //결과 화면 set
