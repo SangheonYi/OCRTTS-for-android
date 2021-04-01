@@ -59,17 +59,19 @@ class MyModel internal constructor() {
 
     private fun setFolderMeta(folder: FolderMeta, main: MainActivity): Int {
         folder.page = main.myDBHelper!!.getContinuePage(folder.title)
-        folder.pickedNumber = folder.uriList.size
-        folder.folderTotalPages += folder.pickedNumber - folder.page
-        folderTotalPage += folder.folderTotalPages
+        Log.i("runOCR", "선택한 폴더(책 제목) : " + folder.title)
         if (main.myDBHelper!!.isNewTitle(folder.title)) {
-            folder.isPageUpdated = false
+            folderTotalPage += folder.uriList.size
             Toast.makeText(main, "변환을 시작합니다.", Toast.LENGTH_LONG).show()
-        } else if (folder.page < folder.pickedNumber) {
-            folder.isPageUpdated = false
+        } else if (folder.page < folder.uriList.size) {
+            folder.uriList = ArrayList(folder.uriList.subList(folder.page, folder.uriList.lastIndex))
+            folderTotalPage += folder.uriList.size
             Toast.makeText(main, "이전 변환에 이어서 변환합니다.", Toast.LENGTH_LONG).show()
-        } else Toast.makeText(main, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
-        return if (folder.page < folder.pickedNumber) 1 else 0
+        } else {
+            //TODO clear folder or remove from folderMetaList
+            Toast.makeText(main, "완료한 변환입니다.\n다시 변환을 원할 시 변환 기록을 지워주세요", Toast.LENGTH_LONG).show()
+        }
+        return if (folder.page < folder.uriList.size) 1 else 0
     }
 
     fun runOCR(main: MainActivity) {
@@ -77,10 +79,10 @@ class MyModel internal constructor() {
         val intent: Intent
         var validCnt = 0
 
-        ocrIndex = 0
         // image meta data parsing
         for (f in folderMetaList) validCnt += setFolderMeta(f, main)
         if (0 < validCnt) {
+            ocrIndex = 0
             intent = Intent(main, TransService::class.java).putExtra("pageNum", folderTotalPage)
             mIsBound = main.bindService(intent, main.mConnection, AppCompatActivity.BIND_AUTO_CREATE)
         }

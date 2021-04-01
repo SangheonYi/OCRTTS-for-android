@@ -74,6 +74,18 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         views.mEditOcrResult.setOnTouchListener { view, event -> true }
         views.speedDialView.setOnActionSelectedListener(selectedListener)
         mTts.setOnUtteranceProgressListener(utterListener)
+        // 변환 로그
+        val file = File("${filesDir}/test.txt")
+
+        val reader = file.bufferedReader()
+        val iterator = reader.lineSequence().iterator()
+
+        val content = StringBuffer()
+        while(iterator.hasNext()) {
+            content.append("${iterator.next()}\n")
+        }
+        reader.close()
+        views.mEditOcrResult.setText(content)
     }
 
     override fun onClick(src: View) {
@@ -134,9 +146,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                     mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
                 }
             }
-            R.id.btn_album -> {
-                if (model.ocrIndex < 0) albumClick()
-            }
+            R.id.btn_album -> if (model.ocrIndex < 0) albumClick()
         }
     }
 
@@ -209,10 +219,10 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             model.charSum += model.bigText.sentence[model.readIndex].length
             mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE, 0))
             model.readIndex++
-            if (model.readIndex < model.bigText.size) mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
+            if (model.readIndex < model.bigText.size)
+                mTts.speak(model.bigText.sentence[model.readIndex], TextToSpeech.QUEUE_FLUSH, null, "unique_id")
             else mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_RESET, 0))
         }
-
         override fun onError(utteranceId: String) {}
     }
 
@@ -227,7 +237,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             try {
                 msg = Message.obtain(null, TransService.CONNECT, 0)
                 msg.replyTo = mActivityMessenger
-                mServiceMessenger.send(msg)
+                if (mServiceMessenger != null) mServiceMessenger.send(msg)
             } catch (e: RemoteException) {
                 e.printStackTrace()
             }
@@ -235,7 +245,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
             thread.isDaemon = true
             thread.start()
         }
-
         override fun onServiceDisconnected(componentName: ComponentName) {}
     }
 
@@ -292,14 +301,14 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         listDialogCursor.moveToFirst()
         MaterialAlertDialogBuilder(mainActivity)
                 .setTitle("변환 기록")
-                .setMultiChoiceItems(listDialogCursor, "check_bool", "title_last_page") { dialog, picked, isChekced ->
-                    Log.i("fab", "$isChekced <-isChekced  which- > $picked + 1")
-                    cursor.move(picked + 1)
-                    myDBHelper!!.updateColumn(cursor.getLong(0), cursor.getString(1), cursor.getInt(2).toLong(), cursor.getString(3), 1)
+                .setMultiChoiceItems(listDialogCursor, "check_bool", "title_last_page") {
+                    dialog, picked, isChekced -> cursor.move(picked + 1)
                 }
-                .setPositiveButton("Ok") { dialog, which ->
+                .setPositiveButton("Ok") {
+                    dialog, which ->
                     while (cursor.moveToNext())
-                        if (cursor.getInt(4) == 1) myDBHelper!!.deleteTuple(cursor.getInt(0).toLong(), 0)
+                        if (cursor.getInt(4) == 1)
+                            myDBHelper!!.deleteTuple(cursor.getInt(0).toLong(), 0)
                 }
                 .show()
     }
@@ -310,6 +319,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         var checkedOption = 1
 
         //대화상자 설정
+        model.folderMetaList.clear()
         views.albumMADB.setTitle("이미지 가져오기")
                 .setSingleChoiceItems(writeOption, checkedOption)
                 { dialog, which -> checkedOption = which }
@@ -340,10 +350,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         val checkBool: BooleanArray
         var folder: FolderMeta
 
-        while (cursor!!.moveToNext()) {
-            if (!folderList.contains(cursor.getString(0)))
-                folderList.add(cursor.getString(0))
-        }
+        while (cursor!!.moveToNext())
+            if (!folderList.contains(cursor.getString(0))) folderList.add(cursor.getString(0))
         cursor.close()
         //대화상자 설정
         checkBool = BooleanArray(folderList.size) { false }
@@ -361,6 +369,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                         cursor = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                                 projection, model.mediaFolder + " = ?", arrayOf(e), model.sortOrder)
                         while (cursor!!.moveToNext()) {
+                            //TODO add from recorded page
                             folder.uriList.add(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor!!.getLong(cursor!!.getColumnIndex(MediaStore.Images.ImageColumns._ID))))
                         }
                         cursor!!.moveToFirst()
@@ -378,10 +387,13 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 if (!f.isPageUpdated) f.isPageUpdated = true
                 f.titleLastPage = """${f.title}Page: ${f.page}""".trimIndent()
                 myDBHelper!!.open()
-                if (model.threadIndex > 0 && myDBHelper!!.isNewTitle(f.title))
-                    myDBHelper!!.insertColumn(f.title, f.page.toLong(), f.titleLastPage, 0) != -1L
-                else if (model.threadIndex > 0 && !myDBHelper!!.isNewTitle(f.title))
-                    myDBHelper!!.updateColumn(myDBHelper!!.getIdByTitle(f.title), f.title, f.page.toLong(), f.titleLastPage, 0)
+                if (model.threadIndex > 0 && myDBHelper!!.isNewTitle(f.title)) {
+                    if (myDBHelper!!.insertColumn(f.title, f.page.toLong(), f.titleLastPage, 0) != -1L)
+                        Log.e(TAG_DB, "Insert DB Failed" )
+                } else if (model.threadIndex > 0 && !myDBHelper!!.isNewTitle(f.title)) {
+                    if (myDBHelper!!.updateColumn(myDBHelper!!.getIdByTitle(f.title), f.title, f.page.toLong(), f.titleLastPage, 0))
+                        Log.e(TAG_DB, "Update DB Failed" )
+                }
             }
         }
     }
@@ -403,6 +415,7 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         val assetMgr = mainActivity.assets
         val inStream: InputStream
         val os: OutputStream
+
         try {
             inStream = assetMgr.open("tessdata/" + model.lang + ".traineddata")
             val destFile = model.dataPath + "/tessdata/" + model.lang + ".traineddata"
@@ -422,11 +435,9 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
 
     // service terminate
     fun terminateService() {
-        Log.i("Service", "terminateService called is bound? ${model.mIsBound}")
         if (model.mIsBound) {
             val msg = Message.obtain(null, TransService.DISCONNECT)
 
-            Log.i("DB", "now service will terminate")
             try {
                 mServiceMessenger.send(msg)
             } catch (e: RemoteException) {
@@ -451,7 +462,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         terminateService()
         mTts.stop()
         mTts.shutdown()
-        Log.i("onDestroy", "onDestroy() threadIndex: ${model.threadIndex}")
         if (model.threadIndex > 0 && model.safUri != null) {
             model.ocrResult = views.mEditOcrResult.text.toString()
             model.frw.alterDocument(mainActivity, model.ocrResult, model.safUri)
@@ -460,5 +470,8 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         model.sTess!!.clear()
         model.sTess!!.end()
         super.onDestroy()
+    }
+    companion object {
+        const val TAG_DB = "Translated images log DB"
     }
 }

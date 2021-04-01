@@ -50,8 +50,8 @@ class MyView {
         speedDialView = main.findViewById(R.id.speedDial)
 
         // Ad
-        mAdView = main.findViewById(R.id.adView)
-        mAdView.loadAd(AdRequest.Builder().build())
+//        mAdView = main.findViewById(R.id.adView)
+//        mAdView.loadAd(AdRequest.Builder().build())
 
         // Dialog
         writeMADB = MaterialAlertDialogBuilder(main)

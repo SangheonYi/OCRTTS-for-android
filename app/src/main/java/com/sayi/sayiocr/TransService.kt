@@ -6,7 +6,6 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.os.*
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.sayiocr.R
@@ -50,12 +49,8 @@ class TransService : Service() {
         @SuppressLint("RestrictedApi")
         override fun handleMessage(msg: Message) {
             when (msg.what) {
-                CONNECT -> {
-                    mActivityMessenger = msg.replyTo
-                }
-                DISCONNECT -> {
-                    mActivityMessenger = null
-                }
+                CONNECT -> mActivityMessenger = msg.replyTo
+                DISCONNECT -> mActivityMessenger = null
                 VIEW_NOTIFI_PROGRESS -> {
                     builder!!.setProgress(totalPageNum, msg.obj.toString().toInt(), false)
                             .setContentText(msg.obj.toString() + " / " + totalPageNum)
