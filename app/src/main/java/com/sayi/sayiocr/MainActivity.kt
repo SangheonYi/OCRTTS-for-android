@@ -74,18 +74,6 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         views.mEditOcrResult.setOnTouchListener { view, event -> true }
         views.speedDialView.setOnActionSelectedListener(selectedListener)
         mTts.setOnUtteranceProgressListener(utterListener)
-        // 변환 로그
-        val file = File("${filesDir}/test.txt")
-
-        val reader = file.bufferedReader()
-        val iterator = reader.lineSequence().iterator()
-
-        val content = StringBuffer()
-        while(iterator.hasNext()) {
-            content.append("${iterator.next()}\n")
-        }
-        reader.close()
-        views.mEditOcrResult.setText(content)
     }
 
     override fun onClick(src: View) {
