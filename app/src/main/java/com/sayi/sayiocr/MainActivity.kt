@@ -293,10 +293,9 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
         cursor.moveToFirst()
         MaterialAlertDialogBuilder(mainActivity)
                 .setTitle("변환 기록")
-                .setMultiChoiceItems(cursor, "check_bool", "title_last_page")
-                { dialog, picked, isChekced ->
-                    Log.i(TAG_DB, "isChekced: $isChekced, picked: $picked, dialog: $dialog")
-                    checkedIdx[picked] = isChekced
+                .setMultiChoiceItems(cursor, "check_bool", "title_last_page") {
+                    dialog, picked, isChecked ->
+                    checkedIdx[picked] = isChecked
                 }
                 .setPositiveButton("Ok") { dialog, which ->
                     for (i in 0 until checkedIdx.size) {
