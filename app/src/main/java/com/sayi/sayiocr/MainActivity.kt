@@ -3,7 +3,10 @@
 package com.sayi.sayiocr
 
 import android.Manifest
-import android.content.*
+import android.content.ComponentName
+import android.content.ContentUris
+import android.content.Intent
+import android.content.ServiceConnection
 import android.os.*
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -283,20 +286,23 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     }
 
     private fun setFabDB() {
-        val listDialogCursor = myDBHelper!!.sortColumn("title")
         val cursor = myDBHelper!!.sortColumn("title")
+        val checkedIdx = arrayListOf<Boolean>()
 
-        listDialogCursor.moveToFirst()
+        while (cursor.moveToNext()) checkedIdx.add(cursor.getLong(DB_CHECK_BOOL_INDEX) == 1.toLong())
+        cursor.moveToFirst()
         MaterialAlertDialogBuilder(mainActivity)
                 .setTitle("변환 기록")
-                .setMultiChoiceItems(listDialogCursor, "check_bool", "title_last_page") {
-                    dialog, picked, isChekced -> cursor.move(picked + 1)
+                .setMultiChoiceItems(cursor, "check_bool", "title_last_page")
+                { dialog, picked, isChekced ->
+                    Log.i(TAG_DB, "isChekced: $isChekced, picked: $picked, dialog: $dialog")
+                    checkedIdx[picked] = isChekced
                 }
-                .setPositiveButton("Ok") {
-                    dialog, which ->
-                    while (cursor.moveToNext())
-                        if (cursor.getInt(4) == 1)
+                .setPositiveButton("Ok") { dialog, which ->
+                    for (i in 0 until checkedIdx.size) {
+                        if (checkedIdx[i] && cursor.moveToPosition(i))
                             myDBHelper!!.deleteTuple(cursor.getInt(0).toLong(), 0)
+                    }
                 }
                 .show()
     }
@@ -377,10 +383,10 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
                 myDBHelper!!.open()
                 if (model.threadIndex > 0 && myDBHelper!!.isNewTitle(f.title)) {
                     if (myDBHelper!!.insertColumn(f.title, f.page.toLong(), f.titleLastPage, 0) != -1L)
-                        Log.e(TAG_DB, "Insert DB Failed" )
+                        Log.e(TAG_DB, "Insert DB Failed")
                 } else if (model.threadIndex > 0 && !myDBHelper!!.isNewTitle(f.title)) {
                     if (myDBHelper!!.updateColumn(myDBHelper!!.getIdByTitle(f.title), f.title, f.page.toLong(), f.titleLastPage, 0))
-                        Log.e(TAG_DB, "Update DB Failed" )
+                        Log.e(TAG_DB, "Update DB Failed")
                 }
             }
         }
@@ -461,5 +467,9 @@ class MainActivity : AppCompatActivity(), OnInitListener, View.OnClickListener {
     }
     companion object {
         const val TAG_DB = "Translated images log DB"
+        const val DB_TITLE_INDEX = 1
+        const val DB_LAST_PAGE_INDEX = 2
+        const val DB_VIEW_DATA_INDEX = 3
+        const val DB_CHECK_BOOL_INDEX = 4
     }
 }
