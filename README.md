@@ -22,3 +22,6 @@ actually, this app is built for 'listening' to scanned or pictured books.
 ## Used
 * [Tesseract4Android](https://github.com/adaptech-cz/Tesseract4Android) adaptech
 * [Floating Action Button Speed Dial 3.0](https://github.com/leinardi/FloatingActionButtonSpeedDial) leinardi
+
+## Release
+https://play.google.com/store/apps/details?id=com.sayi.sayiocr
