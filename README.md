@@ -4,13 +4,13 @@ This app is built for 'listening' to scanned or pictured books.
 
 ## Feature
 ### image convert to text
-* Multiple images(jpg, gif, png) picked from android system UI app convert into text.
+* Multiple images(jpg, gif, png) picked from android system UI app convert to text.
 * When you want to save file, first create txt file or select txt file by picker.
 * Conversion result text will be saved when app end.
 * When converting is too long, you can stop the application and next time you can continue the conversion from next page you stopped.
 * You can check stopped page.
 * When conversion begin, notification show conversion status.
-* During conversion you can turn off screen. this will save battery a lot and prevent device's superheat
+* During conversion you can turn off screen. This will save battery a lot and prevent device's superheat
 
 ### text convert to speech
 * App can read to you converted text.
