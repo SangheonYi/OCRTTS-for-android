@@ -12,11 +12,11 @@ This app is built for 'listening' to scanned or pictured books.
 * When conversion begin, notification show conversion status.
 * During conversion you can turn off screen. this will save battery a lot and prevent device's superheat
 
-### text convert into speech
-* app can read to you converted text.
-* you can control reading speed, sentences you want to listen.
-* if you restart after click stop button, app will read from first sentence.
-* if you want stop just a moment then click pause button.
+### text convert to speech
+* App can read to you converted text.
+* You can control reading speed, sentences you want to listen.
+* If you restart after click stop button, app will read from first sentence.
+* If you want stop just a moment then click pause button.
 
 ## Used
 * [Tesseract4Android](https://github.com/adaptech-cz/Tesseract4Android) adaptech
