@@ -4,8 +4,8 @@ This app is built for 'listening' to scanned or pictured books.
 
 ## Feature
 ### image convert to text
-* Multiple images(jpg, gif, png) picked from android system UI app convert to text.
-* When you want to save file, first create txt file or select txt file by picker.
+* Multiple images(.jpg, .gif, .png) picked from app convert to text.
+* When you want to save file, first create .txt file or select .txt file by picker.
 * Conversion result text will be saved when app end.
 * When converting is too long, you can stop the application and next time you can continue the conversion from next page you stopped.
 * You can check stopped page.
@@ -19,6 +19,7 @@ This app is built for 'listening' to scanned or pictured books.
 * If you want stop just a moment then click pause button.
 
 ## Dependencies
+This project uses below libraries :
 * [Tesseract4Android](https://github.com/adaptech-cz/Tesseract4Android) adaptech
 * [Floating Action Button Speed Dial 3.0](https://github.com/leinardi/FloatingActionButtonSpeedDial) leinardi
 
