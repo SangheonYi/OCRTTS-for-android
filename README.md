@@ -18,7 +18,7 @@ This app is built for 'listening' to scanned or pictured books.
 * If you restart after click stop button, app will read from first sentence.
 * If you want stop just a moment then click pause button.
 
-## Used
+## Dependencies
 * [Tesseract4Android](https://github.com/adaptech-cz/Tesseract4Android) adaptech
 * [Floating Action Button Speed Dial 3.0](https://github.com/leinardi/FloatingActionButtonSpeedDial) leinardi
 
