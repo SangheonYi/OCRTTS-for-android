@@ -20,7 +20,7 @@
         app:layout_constraintTop_toTopOf="parent"></com.google.android.gms.ads.AdView>
 
     <ImageButton
-        android:id="@+id/btn_album"
+        android:id="@+id/album"
         android:layout_width="135dp"
         android:layout_height="117dp"
         android:layout_marginStart="8dp"
@@ -96,10 +96,10 @@
         android:layout_height="113dp"
         android:layout_marginStart="4dp"
         app:layout_constraintBottom_toTopOf="@+id/linearLayout3"
-        app:layout_constraintStart_toEndOf="@+id/btn_album">
+        app:layout_constraintStart_toEndOf="@+id/album">
 
         <EditText
-            android:id="@+id/OCRprogress_bar"
+            android:id="@+id/ocr_progress_bar"
             android:layout_width="243dp"
             android:layout_height="wrap_content"
             android:hint="변환 진행 상황"
@@ -110,7 +110,7 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <EditText
-            android:id="@+id/ReadingState_bar"
+            android:id="@+id/reading_state_bar"
             android:layout_width="243dp"
             android:layout_height="wrap_content"
             android:hint="문장 번호"
@@ -130,9 +130,9 @@
         android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/btn_album"
+        app:layout_constraintBottom_toTopOf="@+id/album"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/btn_album"
+        app:layout_constraintStart_toStartOf="@+id/album"
         app:layout_constraintTop_toBottomOf="@+id/adView">
 
         <LinearLayout
@@ -141,7 +141,7 @@
             android:orientation="vertical">
 
             <EditText
-                android:id="@+id/edit_ocrresult"
+                android:id="@+id/edit_ocr_result"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:focusable="true"
@@ -157,7 +157,7 @@
         android:layout_height="match_parent" />
 
     <com.leinardi.android.speeddial.SpeedDialView
-        android:id="@+id/speedDial"
+        android:id="@+id/speed_dial"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"

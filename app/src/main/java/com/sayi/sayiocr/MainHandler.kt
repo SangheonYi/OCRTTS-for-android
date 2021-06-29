@@ -20,31 +20,31 @@ class MainHandler(private val mainActivity: MainActivity) : Handler() {
 
         when (msg.what) {
             model.VIEW_RESULT_SET -> {
-                views.mEditOcrResult.append(msg.obj.toString())
+                views.editOcrResult.append(msg.obj.toString())
             }
             model.VIEW_READING_STATE -> {
                 model.readState = model.bigText.size.toString() + "문장 중 " + (model.readIndex + 1) + "번째"
-                views.mEditReadingState.setText(model.readState)
+                mainActivity.bindings.readingStateBar.setText(model.readState)
             }
             model.VIEW_READ_HIGHLIGHT -> {
-                views.mEditOcrResult.requestFocus()
+                mainActivity.bindings.editOcrResult.requestFocus()
                 if (model.readIndex < model.bigText.size &&
-                        model.charSum + model.bigText.sentence[model.readIndex].length <= views.mEditOcrResult.length()) {
-                    views.mEditOcrResult.setSelection(model.charSum, model.charSum + model.bigText.sentence[model.readIndex].length)
+                        model.charSum + model.bigText.sentence[model.readIndex].length <= mainActivity.bindings.editOcrResult.length()) {
+                    mainActivity.bindings.editOcrResult.setSelection(model.charSum, model.charSum + model.bigText.sentence[model.readIndex].length)
                 }
             }
             model.VIEW_RESET -> {
                 model.readIndex = 0
                 model.charSum = 0
-                views.mEditOcrResult.clearFocus()
+                mainActivity.bindings.editOcrResult.clearFocus()
                 model.state = "Stop"
                 mTts.stop()
                 mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_READING_STATE))
                 mHandler.sendMessage(Message.obtain(mHandler, model.VIEW_BUTTON_IMG)) //버튼 이미지 바꿈
             }
             model.VIEW_BUTTON_IMG -> {
-                if (model.state == "playing" && mTts.isSpeaking) views.mPlayButton.setImageResource(R.drawable.pause_states)
-                else views.mPlayButton.setImageResource(R.drawable.play_states)
+                if (model.state == "playing" && mTts.isSpeaking) mainActivity.bindings.play.setImageResource(R.drawable.pause_states)
+                else mainActivity.bindings.play.setImageResource(R.drawable.play_states)
             }
             model.VIEW_PROGRESS_ING -> {
                 try {
@@ -54,7 +54,7 @@ class MainHandler(private val mainActivity: MainActivity) : Handler() {
                 } catch (e: RemoteException) {
                     e.printStackTrace()
                 }
-                views.mEditOCRProgress.setText("${model.folderTotalPage} 장 중 ${model.ocrIndex} 장 변환")
+                mainActivity.bindings.ocrProgressBar.setText("${model.folderTotalPage} 장 중 ${model.ocrIndex} 장 변환")
             }
             model.VIEW_TRANS_DONE -> {
                 try {
@@ -64,8 +64,8 @@ class MainHandler(private val mainActivity: MainActivity) : Handler() {
                 } catch (e: RemoteException) {
                     e.printStackTrace()
                 }
-                views.mEditOCRProgress.setText(model.folderTotalPage.toString() + "장 Done")
-                views.mEditOcrResult.append(" ")
+                mainActivity.bindings.ocrProgressBar.setText(model.folderTotalPage.toString() + "장 Done")
+                mainActivity.bindings.editOcrResult.append(" ")
                 model.ocrIndex = -1
                 model.folderTotalPage = 0
             }
