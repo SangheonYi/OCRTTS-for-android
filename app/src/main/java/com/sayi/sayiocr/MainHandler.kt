@@ -3,8 +3,9 @@ package com.sayi.sayiocr
 import android.os.Handler
 import android.os.Message
 import android.os.RemoteException
-import android.util.Log
 import com.example.sayiocr.R
+import com.sayi.sayiocr.ui.MainActivity
+import com.sayi.sayiocr.ui.transservice.TransService
 
 class MainHandler(private val mainActivity: MainActivity) : Handler() {
     private val mHandler = this
@@ -15,7 +16,7 @@ class MainHandler(private val mainActivity: MainActivity) : Handler() {
         val mActivityMessenger = mainActivity.mActivityMessenger
         val mTts = mainActivity.mTts
         val model = mainActivity.model
-        val views = mainActivity.views
+        val views = mainActivity.bindings
 
         when (msg.what) {
             model.VIEW_RESULT_SET -> {

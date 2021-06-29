@@ -12,6 +12,7 @@ import com.google.android.gms.ads.AdView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.leinardi.android.speeddial.SpeedDialActionItem
 import com.leinardi.android.speeddial.SpeedDialView
+import com.sayi.sayiocr.ui.MainActivity
 
 class MyView {
     lateinit var mEditOcrResult: EditText //변환된 Text View

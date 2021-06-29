@@ -6,10 +6,12 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.googlecode.tesseract.android.TessBaseAPI
+import com.sayi.sayiocr.ui.MainActivity
+import com.sayi.sayiocr.ui.transservice.TransService
+import com.sayi.sayiocr.util.BigText
 
 class MyModel internal constructor() {
     //const

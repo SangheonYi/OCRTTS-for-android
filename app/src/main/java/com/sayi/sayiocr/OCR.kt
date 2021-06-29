@@ -1,7 +1,5 @@
 package com.sayi.sayiocr
 
-import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -9,12 +7,7 @@ import android.os.*
 import android.provider.MediaStore
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import java.io.BufferedWriter
-import java.io.FileWriter
-import kotlin.math.roundToInt
-import kotlin.system.measureTimeMillis
-import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
+import com.sayi.sayiocr.ui.MainActivity
 
 class OCR(inMain: MainActivity)  // 초기화 작업
     : Thread() {
