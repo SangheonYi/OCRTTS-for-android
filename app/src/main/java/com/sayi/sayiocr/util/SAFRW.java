@@ -1,4 +1,4 @@
-package com.sayi.sayiocr;
+package com.sayi.sayiocr.util;
 
 import android.app.Activity;
 import android.content.Intent;

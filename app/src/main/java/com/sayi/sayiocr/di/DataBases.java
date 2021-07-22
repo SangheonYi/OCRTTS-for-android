@@ -1,4 +1,4 @@
-package com.sayi.sayiocr;
+package com.sayi.sayiocr.di;
 
 import android.provider.BaseColumns;
 

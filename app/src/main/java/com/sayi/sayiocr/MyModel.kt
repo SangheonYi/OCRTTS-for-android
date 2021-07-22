@@ -12,6 +12,7 @@ import com.googlecode.tesseract.android.TessBaseAPI
 import com.sayi.sayiocr.ui.MainActivity
 import com.sayi.sayiocr.ui.transservice.TransService
 import com.sayi.sayiocr.util.BigText
+import com.sayi.sayiocr.util.SAFRW
 
 class MyModel internal constructor() {
     //const

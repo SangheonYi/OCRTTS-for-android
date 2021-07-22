@@ -7,7 +7,7 @@ import android.database.SQLException
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabase.CursorFactory
 import android.database.sqlite.SQLiteOpenHelper
-import android.util.Log
+import com.sayi.sayiocr.di.DataBases
 
 class MyDatabaseOpenHelper(private val mCtx: Context) {
     private val DATABASE_NAME = "InnerDatabase(SQLite).db"
